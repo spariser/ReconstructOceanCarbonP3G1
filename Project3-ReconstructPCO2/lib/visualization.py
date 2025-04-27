@@ -1224,3 +1224,704 @@ def plot_masking_strategy_month_difference(
         worldmap.set_cbar_xlabel(colorbar, "Δ Observations", fontsize=12)
 
         plt.show()
+
+
+def plot_masking_meanstrategy_difference(
+    mask_name_1,
+    mask_name_2,
+    mask_data_dict, # This parameter is not actually used in the function body, but kept for signature consistency
+    selected_mems_dict,
+    ensemble_dir,
+    output_dir,
+    dates,            # Not directly used for averaging, but kept for consistency. Assumed recon files cover the period.
+    init_date,        # Used for finding recon file path
+    fin_date,         # Used for finding recon file path
+    # --- MODIFIED PARAMETERS ---
+    start_time,       # Start time for averaging (e.g., "2004-01")
+    end_time,         # End time for averaging (e.g., "2023-12")
+    # --- END MODIFIED PARAMETERS ---
+    plot_style="seaborn-v0_8-talk",
+    cmap_diff="RdBu_r",  # Colormap as a string
+    diff_vrange=[-30, 30],
+    # chosen_time is removed, replaced by start_time and end_time
+):
+    """
+    Plot the difference between the time-averaged reconstructions from
+    two different masking strategies over a specified period.
+    (Modified from original to show difference of time averages)
+    """
+
+    # --- Data Loading and Preparation ---
+    try:
+        # Select the first ensemble and member (original logic kept)
+        first_ens = list(selected_mems_dict.keys())[0]
+        first_mem = selected_mems_dict[first_ens][0]
+    except (IndexError, KeyError) as e:
+        print(f"Error accessing selected members dictionary: {e}. Check the structure of selected_mems_dict.")
+        return
+
+    # Construct paths (original logic kept)
+    recon_path_1 = f"{output_dir}/reconstructions/{mask_name_1}/{first_ens}/{first_mem}/recon_pCO2_{first_ens}_{first_mem}_mon_1x1_{init_date}_{fin_date}.zarr"
+    recon_path_2 = f"{output_dir}/reconstructions/{mask_name_2}/{first_ens}/{first_mem}/recon_pCO2_{first_ens}_{first_mem}_mon_1x1_{init_date}_{fin_date}.zarr"
+
+    print(f"Loading recon 1: {recon_path_1}")
+    print(f"Loading recon 2: {recon_path_2}")
+
+    # Load full reconstructed data for the relevant variable
+    try:
+        recon_full_1 = xr.open_zarr(recon_path_1, consolidated=True)["pCO2_recon_full"]
+        recon_full_2 = xr.open_zarr(recon_path_2, consolidated=True)["pCO2_recon_full"]
+    except FileNotFoundError as e:
+        print(f"Error opening reconstruction file: {e}. Check paths and ensure files exist.")
+        print(f"Path 1: {recon_path_1}")
+        print(f"Path 2: {recon_path_2}")
+        return
+    except KeyError as e:
+        print(f"Error: Variable 'pCO2_recon_full' not found in Zarr store: {e}")
+        return
+    except Exception as e: # Catch other potential zarr/xarray errors
+        print(f"An unexpected error occurred opening Zarr stores: {e}")
+        return
+
+    # --- Select Time Slice and Average ---
+    print(f"Calculating time average from {start_time} to {end_time} for both reconstructions...")
+    try:
+        recon_slice_1 = recon_full_1.sel(time=slice(start_time, end_time))
+        recon_slice_2 = recon_full_2.sel(time=slice(start_time, end_time))
+
+        # Check if slices are empty
+        if recon_slice_1.time.size == 0:
+            print(f"Warning: No time data found for recon 1 between {start_time} and {end_time}.")
+            return
+        if recon_slice_2.time.size == 0:
+             print(f"Warning: No time data found for recon 2 between {start_time} and {end_time}.")
+             return
+
+        recon_avg_1_temporal = recon_slice_1.mean(dim="time", skipna=True)
+        recon_avg_2_temporal = recon_slice_2.mean(dim="time", skipna=True)
+    except KeyError as e:
+        print(f"Error selecting time slice: {e}. Check if 'time' coordinate exists and format of start/end times ({start_time}, {end_time}) matches data.")
+        return
+    except Exception as e:
+        print(f"An error occurred during time slicing or averaging: {e}")
+        return
+
+    # Handle the potential extra dimension (like the original [0, ...]) AFTER averaging
+    try:
+        if len(recon_avg_1_temporal.dims) > 2:
+            # Try to find a likely singleton dimension (e.g., 'member') if not the first one
+            potential_singleton_dims = [d for d in recon_avg_1_temporal.dims if d not in ['ylat', 'xlon', 'lat', 'lon'] and recon_avg_1_temporal.sizes[d] == 1]
+            if potential_singleton_dims:
+                dim_to_squeeze = potential_singleton_dims[0]
+                print(f"Selecting index 0 from singleton dimension '{dim_to_squeeze}' for recon 1 after averaging.")
+                recon_1 = recon_avg_1_temporal.isel({dim_to_squeeze: 0}, drop=True)
+            else:
+                # Fallback to original logic if no obvious singleton found besides the first
+                print(f"Warning: Recon 1 has >2 dims after averaging. Selecting index 0 from leading dimension '{recon_avg_1_temporal.dims[0]}'.")
+                recon_1 = recon_avg_1_temporal.isel({recon_avg_1_temporal.dims[0]: 0}, drop=True)
+        else:
+            recon_1 = recon_avg_1_temporal # Already 2D
+
+        if len(recon_avg_2_temporal.dims) > 2:
+            potential_singleton_dims = [d for d in recon_avg_2_temporal.dims if d not in ['ylat', 'xlon', 'lat', 'lon'] and recon_avg_2_temporal.sizes[d] == 1]
+            if potential_singleton_dims:
+                dim_to_squeeze = potential_singleton_dims[0]
+                print(f"Selecting index 0 from singleton dimension '{dim_to_squeeze}' for recon 2 after averaging.")
+                recon_2 = recon_avg_2_temporal.isel({dim_to_squeeze: 0}, drop=True)
+            else:
+                print(f"Warning: Recon 2 has >2 dims after averaging. Selecting index 0 from leading dimension '{recon_avg_2_temporal.dims[0]}'.")
+                recon_2 = recon_avg_2_temporal.isel({recon_avg_2_temporal.dims[0]: 0}, drop=True)
+        else:
+            recon_2 = recon_avg_2_temporal # Already 2D
+    except Exception as e:
+        print(f"Error handling potential extra dimensions after averaging: {e}")
+        return
+    # --- End Time Slice and Average ---
+
+    # Align longitudes (applied to averaged data)
+    try:
+        # Ensure coordinate names are correct before rolling
+        lon_coord_name = 'xlon' if 'xlon' in recon_1.dims else 'lon' if 'lon' in recon_1.dims else None
+        if lon_coord_name:
+            recon_1 = recon_1.roll(**{lon_coord_name: len(recon_1[lon_coord_name]) // 2}, roll_coords=True)
+            recon_2 = recon_2.roll(**{lon_coord_name: len(recon_2[lon_coord_name]) // 2}, roll_coords=True)
+        else:
+            print("Warning: Could not find standard longitude coordinate ('xlon' or 'lon') for rolling.")
+    except Exception as e:
+        print(f"Error rolling longitude coordinates: {e}")
+        # Decide if you want to return or proceed with unrolled data
+        # return
+
+    # Calculate the difference between the averages
+    try:
+        diff = recon_2 - recon_1
+    except ValueError as e:
+        print(f"Error calculating difference between averaged reconstructions: {e}. Check if dimensions and coordinates align after processing.")
+        return
+
+    # Convert colormap string to colormap object (using new mpl_cm alias)
+    try:
+        # matplotlib >= 3.7 prefers this
+        cmap_object = plt.colormaps[cmap_diff]
+    except AttributeError:
+        # Fallback for older matplotlib using mpl_cm
+        try:
+             cmap_object = mpl_cm.get_cmap(cmap_diff)
+        except ValueError as e:
+             print(f"Error getting colormap: {e}. Check if the name '{cmap_diff}' is a valid matplotlib colormap.")
+             return
+        except AttributeError:
+             print(f"Error: Could not retrieve colormap '{cmap_diff}' using mpl_cm.")
+             return
+
+
+    # --- Plotting ---
+    try:
+        # Check if SpatialMap2 class is available
+        if 'SpatialMap2' not in globals():
+             # Try to import it if you know the module name
+             # from aplotpy import SpatialMap2 # Example
+             # If it cannot be imported or defined, raise an error
+             raise NameError("SpatialMap2 class is not defined or imported.")
+
+        with plt.style.context(plot_style):
+            fig = plt.figure(figsize=(6, 3), dpi=200)
+            worldmap = SpatialMap2(
+                fig=fig,
+                region="world",
+                cbar_mode="single",
+                colorbar=True,
+                cbar_location="bottom",
+                nrows_ncols=[1, 1],
+            )
+
+            # Determine coordinate names for plotting
+            lon_coord_plot = 'xlon' if 'xlon' in recon_1.coords else 'lon'
+            lat_coord_plot = 'ylat' if 'ylat' in recon_1.coords else 'lat'
+
+            sub0 = worldmap.add_plot(
+                lon=recon_1[lon_coord_plot], # Coordinates from either averaged recon
+                lat=recon_1[lat_coord_plot],
+                data=diff,           # Plot the difference of the averages
+                vrange=diff_vrange,
+                cmap=cmap_object,    # Pass the colormap object
+                ax=0,
+            )
+
+            # Update title to reflect averaging period
+            time_title = f"{start_time} to {end_time} Avg."
+            worldmap.set_title(
+                f"Reconstruction Difference ({time_title})\n({mask_name_2} - {mask_name_1})",
+                ax=0,
+                fontsize=13,
+            )
+            colorbar = worldmap.add_colorbar(sub0, ax=0)
+            worldmap.set_cbar_xlabel(colorbar, "Δ pCO₂ (µatm)", fontsize=12)
+
+            plt.tight_layout() # Added tight layout
+            plt.show()
+
+    except NameError as e:
+        print(f"Plotting Error: {e}. Ensure the SpatialMap2 class is defined or imported.")
+    except Exception as e:
+        print(f"An unexpected error occurred during plotting: {e}")
+        # Optionally close the figure if it was created but plotting failed
+        if 'fig' in locals() and plt.fignum_exists(fig.number):
+            plt.close(fig)
+
+
+
+
+
+def plot_mean_comparison_panel(
+    mask_name_1,
+    mask_name_2,
+    mask_data_dict,
+    selected_mems_dict,
+    ensemble_dir,
+    output_dir,
+    dates,
+    init_date,
+    fin_date,
+    mask_vrange=[0, 1],
+    diff_vrange=[-30, 30],
+    cmap_mask="Blues",
+    cmap_diff="RdBu_r",
+    plot_style="seaborn-v0_8-talk",
+):
+    """
+    Plots a 3-panel comparison: Mask 1, Mask 2, and the difference
+    in their corresponding mean pCO2 reconstructions.
+
+    Args:
+        mask_name_1 (str): Name of the first mask scenario.
+        mask_name_2 (str): Name of the second mask scenario.
+        mask_data_dict (dict): Dictionary containing mask dataarrays.
+                                Expected structure: {'mask_name': {'socat_mask': xr.DataArray}}
+        selected_mems_dict (dict): Dictionary defining selected members for ensembles.
+                                   Expected structure: {'ensemble_name': [member_list]}
+        ensemble_dir (str): Path to the main ensemble directory (unused in current logic but kept for signature).
+        output_dir (str): Path to the main output directory containing reconstructions.
+        dates (array-like): Array of dates (unused in current logic but kept for signature).
+        init_date (str): Start date string (YYYY-MM-DD) for file paths.
+        fin_date (str): End date string (YYYY-MM-DD) for file paths.
+        mask_vrange (list, optional): Value range for mask plots. Defaults to [0, 1].
+        diff_vrange (list, optional): Value range for difference plot. Defaults to [-30, 30].
+        cmap_mask (str, optional): Colormap name for mask plots. Defaults to "Blues".
+        cmap_diff (str, optional): Colormap name for difference plot. Defaults to "RdBu_r".
+        plot_style (str, optional): Matplotlib plot style. Defaults to "seaborn-v0_8-talk".
+    """
+
+    # Get colormaps using the new alias mpl_cm
+    try:
+        cmap_mask_obj = mpl_cm.get_cmap(cmap_mask)
+        cmap_diff_obj = mpl_cm.get_cmap(cmap_diff)
+    except ValueError as e:
+        print(f"Error getting colormap: {e}. Check if the names '{cmap_mask}' and '{cmap_diff}' are valid matplotlib colormaps.")
+        return
+    except AttributeError:
+        # Handle cases where get_cmap might return None or mpl_cm is not as expected (less likely)
+        print(f"Error: Could not retrieve colormaps '{cmap_mask}' or '{cmap_diff}'.")
+        return
+
+
+    # --- Data Loading and Preparation ---
+    try:
+        first_ens = list(selected_mems_dict.keys())[0]
+        first_mem = selected_mems_dict[first_ens][0]
+    except (IndexError, KeyError) as e:
+        print(f"Error accessing selected members dictionary: {e}. Check the structure of selected_mems_dict.")
+        return
+
+    try:
+        mask1 = mask_data_dict[mask_name_1]["socat_mask"].mean(dim="time")
+        mask2 = mask_data_dict[mask_name_2]["socat_mask"].mean(dim="time")
+    except (KeyError, AttributeError, ValueError) as e:
+         print(f"Error processing mask data from mask_data_dict: {e}. Check keys and data structure.")
+         return
+
+    recon_path_1 = f"{output_dir}/reconstructions/{mask_name_1}/{first_ens}/{first_mem}/recon_pCO2_{first_ens}_{first_mem}_mon_1x1_{init_date}_{fin_date}.zarr"
+    recon_path_2 = f"{output_dir}/reconstructions/{mask_name_2}/{first_ens}/{first_mem}/recon_pCO2_{first_ens}_{first_mem}_mon_1x1_{init_date}_{fin_date}.zarr"
+
+    # Load reconstructions and calculate the mean over time
+    try:
+        recon1_full = xr.open_zarr(recon_path_1, consolidated=True)["pCO2_recon_full"]
+        recon2_full = xr.open_zarr(recon_path_2, consolidated=True)["pCO2_recon_full"]
+    except FileNotFoundError as e:
+        print(f"Error opening reconstruction file: {e}. Check paths and ensure files exist.")
+        print(f"Path 1: {recon_path_1}")
+        print(f"Path 2: {recon_path_2}")
+        return
+    except KeyError as e:
+        print(f"Error: Variable 'pCO2_recon_full' not found in Zarr store: {e}")
+        return
+    except Exception as e: # Catch other potential zarr/xarray errors
+        print(f"An unexpected error occurred opening Zarr stores: {e}")
+        return
+
+
+    # Define member dimension name (adjust if necessary)
+    member_dim_name = 'member'
+
+    # Process recon1
+    try:
+        if member_dim_name in recon1_full.dims:
+            if recon1_full.dims[member_dim_name] > 1:
+                print(f"Selecting first member for {mask_name_1} after time mean.")
+                recon1 = recon1_full.mean(dim="time").isel({member_dim_name: 0})
+            elif recon1_full.dims[member_dim_name] == 1:
+                print(f"Squeezing single member dim for {mask_name_1} after time mean.")
+                recon1 = recon1_full.mean(dim="time").squeeze(dim=member_dim_name, drop=True)
+            else: # Should not happen if dim exists, but for completeness
+                 print(f"Warning: Member dimension '{member_dim_name}' found with size 0 for {mask_name_1}. Taking time mean.")
+                 recon1 = recon1_full.mean(dim="time")
+        else:
+            print(f"No member dimension '{member_dim_name}' found for {mask_name_1}, taking time mean.")
+            recon1 = recon1_full.mean(dim="time")
+    except Exception as e:
+        print(f"Error processing recon1 for {mask_name_1}: {e}")
+        return
+
+    # Process recon2
+    try:
+        if member_dim_name in recon2_full.dims:
+            if recon2_full.dims[member_dim_name] > 1:
+                print(f"Selecting first member for {mask_name_2} after time mean.")
+                recon2 = recon2_full.mean(dim="time").isel({member_dim_name: 0})
+            elif recon2_full.dims[member_dim_name] == 1:
+                print(f"Squeezing single member dim for {mask_name_2} after time mean.")
+                recon2 = recon2_full.mean(dim="time").squeeze(dim=member_dim_name, drop=True)
+            else:
+                 print(f"Warning: Member dimension '{member_dim_name}' found with size 0 for {mask_name_2}. Taking time mean.")
+                 recon2 = recon2_full.mean(dim="time")
+        else:
+            print(f"No member dimension '{member_dim_name}' found for {mask_name_2}, taking time mean.")
+            recon2 = recon2_full.mean(dim="time")
+    except Exception as e:
+        print(f"Error processing recon2 for {mask_name_2}: {e}")
+        return
+
+    # Align longitude (roll at 180°) - added checks for safety
+    try:
+        if 'xlon' in mask1.dims:
+            mask1 = mask1.roll(xlon=len(mask1.xlon) // 2, roll_coords=True)
+        if 'xlon' in mask2.dims:
+            mask2 = mask2.roll(xlon=len(mask2.xlon) // 2, roll_coords=True)
+        if 'xlon' in recon1.dims:
+            recon1 = recon1.roll(xlon=len(recon1.xlon) // 2, roll_coords=True)
+        if 'xlon' in recon2.dims:
+            recon2 = recon2.roll(xlon=len(recon2.xlon) // 2, roll_coords=True)
+    except Exception as e:
+        print(f"Error rolling longitude coordinates: {e}")
+        # Decide if you want to return or proceed with unrolled data
+        # return
+
+    # Difference in mean reconstructions
+    try:
+        diff = recon2 - recon1
+    except ValueError as e:
+        print(f"Error calculating difference between reconstructions: {e}. Check if dimensions and coordinates align.")
+        return
+
+
+    # --- Plotting ---
+    try:
+        # Check if SpatialMap2 class is available
+        if 'SpatialMap2' not in globals():
+             # Try to import it if you know the module name
+             # from your_spatialmap_module import SpatialMap2
+             # If it cannot be imported or defined, raise an error
+             raise NameError("SpatialMap2 class is not defined or imported.")
+
+        with plt.style.context(plot_style):
+            fig = plt.figure(figsize=(15, 4), dpi=200)
+            worldmap = SpatialMap2(
+                fig=fig,
+                region="world",
+                cbar_mode="each",
+                colorbar=True,
+                cbar_location="bottom",
+                nrows_ncols=[1, 3],
+            )
+
+            # Left: mean sampling mask 1
+            sub0 = worldmap.add_plot(
+                lon=mask1["xlon"], lat=mask1["ylat"], data=mask1,
+                vrange=mask_vrange, cmap=cmap_mask_obj, ax=0, # Use cmap object
+            )
+            worldmap.set_title(f"Mask: {mask_name_1}", ax=0, fontsize=13)
+
+            # Center: mean sampling mask 2
+            sub1 = worldmap.add_plot(
+                lon=mask2["xlon"], lat=mask2["ylat"], data=mask2,
+                vrange=mask_vrange, cmap=cmap_mask_obj, ax=1, # Use cmap object
+            )
+            worldmap.set_title(f"Mask: {mask_name_2}", ax=1, fontsize=13)
+
+            # Right: difference in mean reconstruction
+            sub2 = worldmap.add_plot(
+                lon=diff["xlon"], lat=diff["ylat"], data=diff,
+                vrange=diff_vrange, cmap=cmap_diff_obj, ax=2, # Use cmap object
+            )
+            worldmap.set_title(
+                f"Mean Reconstruction Difference\n({mask_name_2} - {mask_name_1})",
+                ax=2, fontsize=13,
+            )
+
+            # Colorbars
+            cbar0 = worldmap.add_colorbar(sub0, ax=0)
+            cbar1 = worldmap.add_colorbar(sub1, ax=1)
+            cbar2 = worldmap.add_colorbar(sub2, ax=2)
+
+            worldmap.set_cbar_xlabel(cbar0, "Sampling Presence", fontsize=11)
+            worldmap.set_cbar_xlabel(cbar1, "Sampling Presence", fontsize=11)
+            worldmap.set_cbar_xlabel(cbar2, "Δ pCO₂ (µatm)", fontsize=11)
+
+            plt.tight_layout()
+            plt.show()
+
+    except NameError as e:
+        print(f"Plotting Error: {e}. Ensure the SpatialMap2 class is defined or imported.")
+    except Exception as e:
+        print(f"An unexpected error occurred during plotting: {e}")
+        # Optionally close the figure if it was created but plotting failed
+        if 'fig' in locals() and plt.fignum_exists(fig.number):
+            plt.close(fig)
+
+
+
+
+def plot_seasonal_comparison_panel( 
+    mask_name_1,
+    mask_name_2,
+    mask_data_dict,
+    selected_mems_dict,
+    ensemble_dir, # Unused, but kept for signature consistency
+    output_dir,
+    init_date,        # Used for finding recon file path
+    fin_date,         # Used for finding recon file path
+    mask_vrange=[0, 1],
+    diff_vrange=[-30, 30],
+    cmap_mask="Blues",
+    cmap_diff="RdBu_r",
+    plot_style="seaborn-v0_8-talk",
+):
+    """
+    Plots a comparison panel showing seasonal means (DJF, MAM, JJA, SON)
+    of sampling masks and reconstruction differences. Panel layout is
+    4 rows (Seasons) x 3 columns (Mask1, Mask2, Difference).
+    """
+
+    # Get colormaps using the new alias mpl_cm
+    try:
+        cmap_mask_obj = mpl_cm.get_cmap(cmap_mask)
+        cmap_diff_obj = mpl_cm.get_cmap(cmap_diff)
+    except ValueError as e:
+        print(f"Error getting colormap: {e}. Check if the names '{cmap_mask}' and '{cmap_diff}' are valid matplotlib colormaps.")
+        return
+    except AttributeError:
+        # Handle cases where get_cmap might return None or mpl_cm is not as expected
+        print(f"Error: Could not retrieve colormaps '{cmap_mask}' or '{cmap_diff}'.")
+        return
+
+    # --- Data Loading ---
+    try:
+        first_ens = list(selected_mems_dict.keys())[0]
+        first_mem = selected_mems_dict[first_ens][0]
+    except (IndexError, KeyError) as e:
+        print(f"Error accessing selected members dictionary: {e}. Check the structure of selected_mems_dict.")
+        return
+
+    print("Loading full time series data...")
+    try:
+        # Load full masks
+        mask1_full = mask_data_dict[mask_name_1]["socat_mask"]
+        mask2_full = mask_data_dict[mask_name_2]["socat_mask"]
+        # Check if time coordinate exists
+        if 'time' not in mask1_full.coords or 'time' not in mask2_full.coords:
+             raise ValueError("Mask data must have a 'time' coordinate for seasonal grouping.")
+    except KeyError as e:
+        print(f"Error accessing mask data: Key {e} not found in mask_data_dict. Check mask names ('{mask_name_1}', '{mask_name_2}') and dict structure.")
+        return
+    except ValueError as e:
+        print(f"Error with mask data structure: {e}")
+        return
+    except Exception as e:
+        print(f"An unexpected error occurred loading mask data: {e}")
+        return
+
+    # Load full reconstructions paths
+    recon_path_1 = f"{output_dir}/reconstructions/{mask_name_1}/{first_ens}/{first_mem}/recon_pCO2_{first_ens}_{first_mem}_mon_1x1_{init_date}_{fin_date}.zarr"
+    recon_path_2 = f"{output_dir}/reconstructions/{mask_name_2}/{first_ens}/{first_mem}/recon_pCO2_{first_ens}_{first_mem}_mon_1x1_{init_date}_{fin_date}.zarr"
+
+    # Load full reconstructions
+    try:
+        print(f"Loading Zarr: {recon_path_1}")
+        recon1_full_members = xr.open_zarr(recon_path_1, consolidated=True)["pCO2_recon_full"]
+        print(f"Loading Zarr: {recon_path_2}")
+        recon2_full_members = xr.open_zarr(recon_path_2, consolidated=True)["pCO2_recon_full"]
+        # Check if time coordinate exists
+        if 'time' not in recon1_full_members.coords or 'time' not in recon2_full_members.coords:
+             raise ValueError("Reconstruction data must have a 'time' coordinate for seasonal grouping.")
+    except FileNotFoundError as e:
+        print(f"Error opening reconstruction file: {e}. Check paths and ensure files exist.")
+        print(f"Path 1: {recon_path_1}")
+        print(f"Path 2: {recon_path_2}")
+        return
+    except KeyError as e:
+        print(f"Error: Variable 'pCO2_recon_full' not found in Zarr store: {e}")
+        return
+    except ValueError as e:
+         print(f"Error with reconstruction data structure: {e}")
+         return
+    except Exception as e: # Catch other potential zarr/xarray errors
+        print(f"An unexpected error occurred opening Zarr stores: {e}")
+        return
+
+    # --- Data Processing ---
+    try:
+        # Handle potential member dimension (select first member)
+        member_dim_name = 'member' # Adjust if needed
+
+        # Process recon1
+        if member_dim_name in recon1_full_members.dims:
+            if recon1_full_members.dims[member_dim_name] > 1:
+                print(f"Selecting first member for {mask_name_1}.")
+                recon1_full = recon1_full_members.isel({member_dim_name: 0}, drop=True)
+            elif recon1_full_members.dims[member_dim_name] == 1:
+                print(f"Squeezing single member dim for {mask_name_1}.")
+                recon1_full = recon1_full_members.squeeze(dim=member_dim_name, drop=True)
+            else: # Dim size 0, unlikely but handle
+                 print(f"Warning: Member dimension '{member_dim_name}' found with size 0 for {mask_name_1}. Using as is.")
+                 recon1_full = recon1_full_members
+        else:
+            print(f"No member dimension '{member_dim_name}' found or needed for {mask_name_1}.")
+            recon1_full = recon1_full_members # Assume it's already (time, lat, lon)
+
+        # Process recon2
+        if member_dim_name in recon2_full_members.dims:
+            if recon2_full_members.dims[member_dim_name] > 1:
+                print(f"Selecting first member for {mask_name_2}.")
+                recon2_full = recon2_full_members.isel({member_dim_name: 0}, drop=True)
+            elif recon2_full_members.dims[member_dim_name] == 1:
+                print(f"Squeezing single member dim for {mask_name_2}.")
+                recon2_full = recon2_full_members.squeeze(dim=member_dim_name, drop=True)
+            else:
+                print(f"Warning: Member dimension '{member_dim_name}' found with size 0 for {mask_name_2}. Using as is.")
+                recon2_full = recon2_full_members
+        else:
+            print(f"No member dimension '{member_dim_name}' found or needed for {mask_name_2}.")
+            recon2_full = recon2_full_members
+
+        # Check final dimensions
+        if len(recon1_full.dims) > 3 or 'time' not in recon1_full.dims:
+             raise ValueError(f"Processed recon1 for {mask_name_1} has unexpected dimensions: {recon1_full.dims}. Expected (time, lat, lon).")
+        if len(recon2_full.dims) > 3 or 'time' not in recon2_full.dims:
+             raise ValueError(f"Processed recon2 for {mask_name_2} has unexpected dimensions: {recon2_full.dims}. Expected (time, lat, lon).")
+
+        # --- Calculate Seasonal Means ---
+        print("Calculating seasonal means...")
+        seasons_order = ['DJF', 'MAM', 'JJA', 'SON']
+
+        # Group by season and calculate mean over time for each group
+        mask1_seasonal = mask1_full.groupby('time.season').mean(dim="time", skipna=True).sel(season=seasons_order)
+        mask2_seasonal = mask2_full.groupby('time.season').mean(dim="time", skipna=True).sel(season=seasons_order)
+        recon1_seasonal = recon1_full.groupby('time.season').mean(dim="time", skipna=True).sel(season=seasons_order)
+        recon2_seasonal = recon2_full.groupby('time.season').mean(dim="time", skipna=True).sel(season=seasons_order)
+
+        # Calculate the difference between the *seasonal means*
+        diff_seasonal = recon2_seasonal - recon1_seasonal
+
+        # --- Align Longitude (Roll at 180°) for all seasonal means ---
+        print("Aligning longitudes...")
+        lon_coord_name = 'xlon' if 'xlon' in mask1_seasonal.dims else 'lon' if 'lon' in mask1_seasonal.dims else None
+        if lon_coord_name:
+             lon_size = len(mask1_seasonal[lon_coord_name])
+             # Define adjustment function
+             def adjust_lon(ds, lon_name, size):
+                 ds_rolled = ds.roll(**{lon_name: size // 2}, roll_coords=True)
+                 # Adjust coordinate values to -180 to 180
+                 ds_rolled[lon_name] = (ds_rolled[lon_name] + 180) % 360 - 180
+                 # Re-sort by the new longitude values to avoid plotting issues
+                 ds_rolled = ds_rolled.sortby(lon_name)
+                 return ds_rolled
+
+             mask1_seasonal = adjust_lon(mask1_seasonal, lon_coord_name, lon_size)
+             mask2_seasonal = adjust_lon(mask2_seasonal, lon_coord_name, lon_size)
+             # Assuming recons and diff have same lon coord
+             recon1_seasonal = adjust_lon(recon1_seasonal, lon_coord_name, lon_size)
+             recon2_seasonal = adjust_lon(recon2_seasonal, lon_coord_name, lon_size)
+             diff_seasonal = adjust_lon(diff_seasonal, lon_coord_name, lon_size)
+        else:
+            print("Warning: Could not find standard longitude coordinate ('xlon' or 'lon') for rolling.")
+
+    except ValueError as e:
+        print(f"Error during data processing (member selection, seasonal mean, lon align): {e}")
+        return
+    except KeyError as e: # e.g. if 'season' dim not created correctly by groupby
+        print(f"Error accessing calculated seasonal data: {e}. Check time coordinate validity.")
+        return
+    except Exception as e:
+        print(f"An unexpected error occurred during data processing: {e}")
+        return
+
+    # --- Plotting ---
+    print("Generating seasonal plots...")
+    try:
+         # Check if SpatialMap2 class is available
+        if 'SpatialMap2' not in globals():
+             raise NameError("SpatialMap2 class is not defined or imported.")
+
+        with plt.style.context(plot_style):
+            # Create a figure with 4 rows (one for each season) and 3 columns
+            fig = plt.figure(figsize=(15, 16), dpi=200) # Taller figure
+
+            # Initialize map class - ensure it can handle multi-row axes
+            worldmap = SpatialMap2(
+                fig=fig,
+                region="world",
+                cbar_mode="each", # One colorbar per plot
+                colorbar=True,
+                cbar_location="bottom",
+                nrows_ncols=[4, 3] # 4 rows, 3 columns
+            )
+
+            # Determine coordinate names for plotting
+            lon_coord_plot = lon_coord_name if lon_coord_name else ('xlon' if 'xlon' in mask1_seasonal.coords else 'lon') # Best guess if roll failed
+            lat_coord_plot = 'ylat' if 'ylat' in mask1_seasonal.coords else 'lat'
+
+            # Loop through each season and plot the corresponding row
+            for i, season in enumerate(seasons_order):
+                print(f"  Plotting season: {season}")
+                # Calculate axis indices for the current row
+                ax_idx_mask1 = i * 3 + 0
+                ax_idx_mask2 = i * 3 + 1
+                ax_idx_diff  = i * 3 + 2
+
+                # Select data for the current season
+                mask1_s = mask1_seasonal.sel(season=season)
+                mask2_s = mask2_seasonal.sel(season=season)
+                diff_s = diff_seasonal.sel(season=season)
+
+                # --- Plotting Column 1: Mask 1 ---
+                try:
+                    sub0 = worldmap.add_plot(
+                        lon=mask1_s[lon_coord_plot], lat=mask1_s[lat_coord_plot], data=mask1_s,
+                        vrange=mask_vrange, cmap=cmap_mask_obj, ax=ax_idx_mask1, # Use cmap object
+                    )
+                    worldmap.set_title(f"Mask: {mask_name_1} ({season})", ax=ax_idx_mask1, fontsize=11)
+                    cbar0 = worldmap.add_colorbar(sub0, ax=ax_idx_mask1)
+                    worldmap.set_cbar_xlabel(cbar0, "Mean Sampling Presence", fontsize=9)
+                except Exception as plot_err:
+                    print(f"Error plotting Mask 1 for {season}: {plot_err}")
+                    # Try to set title even if plot fails
+                    try: worldmap.set_title(f"Mask: {mask_name_1} ({season})\nPLOT ERROR", ax=ax_idx_mask1, fontsize=11)
+                    except: pass # Ignore error setting error title
+
+                # --- Plotting Column 2: Mask 2 ---
+                try:
+                    sub1 = worldmap.add_plot(
+                        lon=mask2_s[lon_coord_plot], lat=mask2_s[lat_coord_plot], data=mask2_s,
+                        vrange=mask_vrange, cmap=cmap_mask_obj, ax=ax_idx_mask2, # Use cmap object
+                    )
+                    worldmap.set_title(f"Mask: {mask_name_2} ({season})", ax=ax_idx_mask2, fontsize=11)
+                    cbar1 = worldmap.add_colorbar(sub1, ax=ax_idx_mask2)
+                    worldmap.set_cbar_xlabel(cbar1, "Mean Sampling Presence", fontsize=9)
+                except Exception as plot_err:
+                     print(f"Error plotting Mask 2 for {season}: {plot_err}")
+                     try: worldmap.set_title(f"Mask: {mask_name_2} ({season})\nPLOT ERROR", ax=ax_idx_mask2, fontsize=11)
+                     except: pass
+
+                # --- Plotting Column 3: Difference ---
+                try:
+                    sub2 = worldmap.add_plot(
+                        lon=diff_s[lon_coord_plot], lat=diff_s[lat_coord_plot], data=diff_s,
+                        vrange=diff_vrange, cmap=cmap_diff_obj, ax=ax_idx_diff, # Use cmap object
+                    )
+                    worldmap.set_title(
+                        f"Mean Recon Diff ({season})\n({mask_name_2} - {mask_name_1})",
+                        ax=ax_idx_diff, fontsize=11,
+                    )
+                    cbar2 = worldmap.add_colorbar(sub2, ax=ax_idx_diff)
+                    worldmap.set_cbar_xlabel(cbar2, f"Mean Δ pCO₂ ({season}) (µatm)", fontsize=9)
+                except Exception as plot_err:
+                     print(f"Error plotting Difference for {season}: {plot_err}")
+                     try: worldmap.set_title(f"Mean Recon Diff ({season})\nPLOT ERROR", ax=ax_idx_diff, fontsize=11)
+                     except: pass
+
+            # Adjust layout
+            plt.tight_layout(rect=[0, 0.03, 1, 0.97]) # Added rect to give slight room for bottom cbars/top titles
+            #plt.subplots_adjust(hspace=0.3, wspace=0.15, bottom=0.08, top=0.95) # Alternative fine-tuning
+
+            plt.show()
+            print("Plotting complete.")
+
+    except NameError as e:
+        print(f"Plotting Error: {e}. Ensure the SpatialMap2 class is defined or imported and initialized correctly.")
+        # Close the figure if it was created but SpatialMap2 failed
+        if 'fig' in locals() and plt.fignum_exists(fig.number):
+             plt.close(fig)
+    except Exception as e:
+        print(f"An unexpected error occurred during plotting setup or looping: {e}")
+        if 'fig' in locals() and plt.fignum_exists(fig.number):
+             plt.close(fig)
