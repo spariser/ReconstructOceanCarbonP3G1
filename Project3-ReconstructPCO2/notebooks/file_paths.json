@@ -5,19 +5,7 @@
         "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r10i1p1f1/ACCESS-ESM1-5.member_r10i1p1f1.Omon.zarr",
         "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_mean_pattern/ACCESS-ESM1-5/member_r10i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.zarr",
         "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_mean_pattern/ACCESS-ESM1-5/member_r10i1p1f1/recon_pCO2_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/densify_mean_pattern_model_pCO2_2D_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.p"
-      },
-      "member_r5i1p1f1": {
-        "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r5i1p1f1/ACCESS-ESM1-5.member_r5i1p1f1.Omon.zarr",
-        "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_mean_pattern/ACCESS-ESM1-5/member_r5i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.zarr",
-        "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_mean_pattern/ACCESS-ESM1-5/member_r5i1p1f1/recon_pCO2_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/densify_mean_pattern_model_pCO2_2D_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.p"
-      },
-      "member_r2i1p1f1": {
-        "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r2i1p1f1/ACCESS-ESM1-5.member_r2i1p1f1.Omon.zarr",
-        "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_mean_pattern/ACCESS-ESM1-5/member_r2i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.zarr",
-        "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_mean_pattern/ACCESS-ESM1-5/member_r2i1p1f1/recon_pCO2_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/densify_mean_pattern_model_pCO2_2D_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.p"
+        "model": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/models/densify_mean_pattern_model_pCO2_2D_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.p"
       }
     }
   },
@@ -27,19 +15,7 @@
         "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r10i1p1f1/ACCESS-ESM1-5.member_r10i1p1f1.Omon.zarr",
         "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_30p/ACCESS-ESM1-5/member_r10i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.zarr",
         "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_30p/ACCESS-ESM1-5/member_r10i1p1f1/recon_pCO2_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/densify_30p_model_pCO2_2D_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.p"
-      },
-      "member_r5i1p1f1": {
-        "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r5i1p1f1/ACCESS-ESM1-5.member_r5i1p1f1.Omon.zarr",
-        "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_30p/ACCESS-ESM1-5/member_r5i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.zarr",
-        "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_30p/ACCESS-ESM1-5/member_r5i1p1f1/recon_pCO2_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/densify_30p_model_pCO2_2D_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.p"
-      },
-      "member_r2i1p1f1": {
-        "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r2i1p1f1/ACCESS-ESM1-5.member_r2i1p1f1.Omon.zarr",
-        "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_30p/ACCESS-ESM1-5/member_r2i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.zarr",
-        "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_30p/ACCESS-ESM1-5/member_r2i1p1f1/recon_pCO2_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/densify_30p_model_pCO2_2D_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.p"
+        "model": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/models/densify_30p_model_pCO2_2D_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.p"
       }
     }
   },
@@ -49,19 +25,7 @@
         "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r10i1p1f1/ACCESS-ESM1-5.member_r10i1p1f1.Omon.zarr",
         "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_50p/ACCESS-ESM1-5/member_r10i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.zarr",
         "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_50p/ACCESS-ESM1-5/member_r10i1p1f1/recon_pCO2_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/densify_50p_model_pCO2_2D_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.p"
-      },
-      "member_r5i1p1f1": {
-        "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r5i1p1f1/ACCESS-ESM1-5.member_r5i1p1f1.Omon.zarr",
-        "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_50p/ACCESS-ESM1-5/member_r5i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.zarr",
-        "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_50p/ACCESS-ESM1-5/member_r5i1p1f1/recon_pCO2_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/densify_50p_model_pCO2_2D_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.p"
-      },
-      "member_r2i1p1f1": {
-        "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r2i1p1f1/ACCESS-ESM1-5.member_r2i1p1f1.Omon.zarr",
-        "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_50p/ACCESS-ESM1-5/member_r2i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.zarr",
-        "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/densify_50p/ACCESS-ESM1-5/member_r2i1p1f1/recon_pCO2_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/densify_50p_model_pCO2_2D_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.p"
+        "model": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/models/densify_50p_model_pCO2_2D_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.p"
       }
     }
   },
@@ -71,19 +35,7 @@
         "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r10i1p1f1/ACCESS-ESM1-5.member_r10i1p1f1.Omon.zarr",
         "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_14p/ACCESS-ESM1-5/member_r10i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.zarr",
         "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_14p/ACCESS-ESM1-5/member_r10i1p1f1/recon_pCO2_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/expand_14p_model_pCO2_2D_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.p"
-      },
-      "member_r5i1p1f1": {
-        "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r5i1p1f1/ACCESS-ESM1-5.member_r5i1p1f1.Omon.zarr",
-        "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_14p/ACCESS-ESM1-5/member_r5i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.zarr",
-        "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_14p/ACCESS-ESM1-5/member_r5i1p1f1/recon_pCO2_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/expand_14p_model_pCO2_2D_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.p"
-      },
-      "member_r2i1p1f1": {
-        "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r2i1p1f1/ACCESS-ESM1-5.member_r2i1p1f1.Omon.zarr",
-        "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_14p/ACCESS-ESM1-5/member_r2i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.zarr",
-        "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_14p/ACCESS-ESM1-5/member_r2i1p1f1/recon_pCO2_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/expand_14p_model_pCO2_2D_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.p"
+        "model": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/models/expand_14p_model_pCO2_2D_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.p"
       }
     }
   },
@@ -93,41 +45,17 @@
         "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r10i1p1f1/ACCESS-ESM1-5.member_r10i1p1f1.Omon.zarr",
         "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_30p/ACCESS-ESM1-5/member_r10i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.zarr",
         "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_30p/ACCESS-ESM1-5/member_r10i1p1f1/recon_pCO2_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/expand_30p_model_pCO2_2D_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.p"
-      },
-      "member_r5i1p1f1": {
-        "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r5i1p1f1/ACCESS-ESM1-5.member_r5i1p1f1.Omon.zarr",
-        "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_30p/ACCESS-ESM1-5/member_r5i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.zarr",
-        "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_30p/ACCESS-ESM1-5/member_r5i1p1f1/recon_pCO2_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/expand_30p_model_pCO2_2D_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.p"
-      },
-      "member_r2i1p1f1": {
-        "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r2i1p1f1/ACCESS-ESM1-5.member_r2i1p1f1.Omon.zarr",
-        "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_30p/ACCESS-ESM1-5/member_r2i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.zarr",
-        "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_30p/ACCESS-ESM1-5/member_r2i1p1f1/recon_pCO2_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/expand_30p_model_pCO2_2D_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.p"
+        "model": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/models/expand_30p_model_pCO2_2D_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.p"
       }
     }
   },
-  "expand_52p": {
+  "expand_50p": {
     "ACCESS-ESM1-5": {
       "member_r10i1p1f1": {
         "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r10i1p1f1/ACCESS-ESM1-5.member_r10i1p1f1.Omon.zarr",
-        "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_52p/ACCESS-ESM1-5/member_r10i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.zarr",
-        "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_52p/ACCESS-ESM1-5/member_r10i1p1f1/recon_pCO2_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/expand_52p_model_pCO2_2D_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.p"
-      },
-      "member_r5i1p1f1": {
-        "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r5i1p1f1/ACCESS-ESM1-5.member_r5i1p1f1.Omon.zarr",
-        "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_52p/ACCESS-ESM1-5/member_r5i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.zarr",
-        "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_52p/ACCESS-ESM1-5/member_r5i1p1f1/recon_pCO2_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/expand_52p_model_pCO2_2D_ACCESS-ESM1-5_r5i1p1f1_mon_1x1_200401_202312.p"
-      },
-      "member_r2i1p1f1": {
-        "pco2T": "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members/ACCESS-ESM1-5/member_r2i1p1f1/ACCESS-ESM1-5.member_r2i1p1f1.Omon.zarr",
-        "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_52p/ACCESS-ESM1-5/member_r2i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.zarr",
-        "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_52p/ACCESS-ESM1-5/member_r2i1p1f1/recon_pCO2_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.zarr",
-        "model": "gs://leap-persistent/azamkhan99/models/expand_52p_model_pCO2_2D_ACCESS-ESM1-5_r2i1p1f1_mon_1x1_200401_202312.p"
+        "pCO2R": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_50p/ACCESS-ESM1-5/member_r10i1p1f1/recon_pCO2residual_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.zarr",
+        "pCO2_save": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/reconstructions/expand_50p/ACCESS-ESM1-5/member_r10i1p1f1/recon_pCO2_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.zarr",
+        "model": "gs://leap-persistent/azamkhan99/azamkhan99/pco2_residual/nmse/post02_xgb/models/expand_50p_model_pCO2_2D_ACCESS-ESM1-5_r10i1p1f1_mon_1x1_200401_202312.p"
       }
     }
   }
