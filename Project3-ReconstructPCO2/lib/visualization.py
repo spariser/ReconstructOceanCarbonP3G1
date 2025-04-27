@@ -347,7 +347,7 @@ def xr_add_cyclic_point(data, cyclic_coord=None):
 ####### Custom Functions created by Group 1 for Project 3 Data Story
 
 
-def plot_mask(mask, title):
+def plot_mask(mask, title, vrange=[0, 144, 12]):
     """
     Plots a mask on a world map using a specified colormap and saves the figure.
 
@@ -371,7 +371,6 @@ def plot_mask(mask, title):
             nrows_ncols=[1, 1],
         )
 
-        vrange = [0, 144, 12]
         cmap = cm.cm.rain
         data = xr_add_cyclic_point(mask, cyclic_coord="xlon")
         data = data.assign_coords(xlon=((data.xlon + 180) % 360))
