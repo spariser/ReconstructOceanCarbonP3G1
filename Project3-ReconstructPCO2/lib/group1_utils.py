@@ -1,3 +1,5 @@
+#pip install residual_utils
+
 import pandas as pd
 import xarray as xr
 import gcsfs
@@ -10,8 +12,9 @@ import csv
 from ngboost import NGBRegressor
 from ngboost.distns import Normal
 from ngboost.scores import LogScore
-import residual_utils as supporting_functions
-
+from . import residual_utils as supporting_functions
+#import residual_utils as supporting_functions
+#import ./residual_utils.py as supporting_functions
 
 def apply_socat_mask_inplace(df, mask_dataset) -> None:
     """
