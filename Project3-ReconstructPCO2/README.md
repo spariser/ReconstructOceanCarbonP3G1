@@ -1,3 +1,11 @@
+# Ocean Mixing Group 1: exploring model statistical confidence & adding new data
+
+This project aims to better understand the statistical significance of reconstructing global pCO₂ fields using ML trained on sparse data. It extends upon the analysis carried out by Gloege et al. (2021) “Quantifying Errors in Observationally Based Estimates of Ocean Carbon Sink Variability.” and the method of Bennington et al. (2022) “Explicit Physical Knowledge in Machine Learning for Ocean Carbon Flux Reconstruction: The pCO2-Residual Method” by introducing a new ML method, NGBoost, which gives a probablistic prediction instead of XGBoost’s point prediction. By introducting probablistic information, including standard deviations, scientists can understand the statistical confidence of models and how that confidence changes with the introduction of additional data.
+
+## **Motivation**
+
+Probablistic predictions provide additional understanding of current models based on this sparse and uneven observations versus point-based predictions. By better discerning confidence in pCO2 reconstructions, scientists can more accurately convey recommendations based on the models, such as more accurately answer questions related to carbon budgets and other scientific and socio-economic questions related to climate change. Additionally, this research can inform scientific funding, helping to answer whether more real-world pCO₂ observations are needed for more accurate models.
+
 ## Peer Review Instructions:
 
 1. Clone the repository:
@@ -31,3 +39,12 @@ Project3/
 |   ├── leappersistent_file_management.ipynb # check the size of files and clean up
 |   ├── config.py # Configuration file for the project 
 ```
+
+## **Team & Contribution**
+
+Group 1:
+- Sarah Pariser:  
+- Azam Khan: 
+- Bokai He: 
+- Victor Wang: 
+
