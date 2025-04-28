@@ -418,7 +418,49 @@ def plot_mask(mask, title, vrange=[0, 144, 12]):
         plt.show()
         # save figure
         # fig.savefig(f"mask_{title}.png", dpi=300, bbox_inches="tight")
+def plot_maskd(mask, title, vrange=[0, 144, 12]):
+    """
+    Plots a mask on a world map using a specified colormap and saves the figure.
 
+    Parameters:
+    -----------
+    mask : xarray.DataArray
+        The data array containing the mask to be plotted. It should have
+        coordinates 'xlon' (longitude) and 'ylat' (latitude).
+    title : str
+        The title of the plot, which will also be used as part of the saved
+        figure's filename.
+    """
+    with plt.style.context("seaborn-v0_8-talk"):
+        fig = plt.figure(figsize=(8.5, 11))  # fig = plt.figure(dpi=300)
+        worldmap = SpatialMap2(
+            fig=fig,
+            region="world",
+            cbar_mode="each",
+            colorbar=True,
+            cbar_location="bottom",
+            nrows_ncols=[1, 1],
+        )
+
+        cmap = cm.cm.rain
+        data = xr_add_cyclic_point(mask, cyclic_coord="xlon")
+        data = data.assign_coords(xlon=((data.xlon + 180) % 360))
+        sub = worldmap.add_plot(
+            lon=data["xlon"],
+            lat=data["ylat"],
+            data=data,
+            vrange=vrange[0:2],
+            cmap=cmap,
+            ax=0,
+            linewidth_coast=0.5,
+        )
+
+        col = worldmap.add_colorbar(sub, ax=0, extend="max")
+        worldmap.set_cbar_xlabel(col, "Change in number of months with data", fontsize=14)
+        worldmap.set_ticks(col, vrange[0], vrange[1], vrange[2])
+        col.ax.tick_params(labelsize=12)
+        worldmap.set_title(title, ax=0, fontsize=14)
+        plt.show()
 
 def plot_reconstruction_vs_truth(
     mask_name,
