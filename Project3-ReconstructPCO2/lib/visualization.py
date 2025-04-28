@@ -3104,3 +3104,174 @@ def plot_reconstruction_comparison_panel_full(
         print(f"Error: Key error. {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+
+
+
+
+def plot_seasonal_difference_panel_1x4( # Renamed function
+    mask_name_1,
+    mask_name_2,
+    selected_mems_dict,
+    ensemble_dir,
+    output_dir,
+    init_date,
+    fin_date,
+    diff_vrange=[-30, 30],
+    cmap_diff="RdBu_r",
+    plot_style="seaborn-v0_8-talk",
+):
+    """
+    Plots a 1x4 panel (single row) showing seasonal means (DJF, MAM, JJA, SON)
+    of reconstruction differences (mask_name_2 - mask_name_1).
+    """
+    # Use the new alias mpl_cm here
+    cmap_diff_obj = mpl_cm.get_cmap(cmap_diff)
+
+    first_ens = list(selected_mems_dict.keys())[0]
+    first_mem = selected_mems_dict[first_ens][0]
+
+    # --- Load FULL Reconstruction Data ---
+    print("Loading full time series data for reconstructions...")
+    recon_path_1 = f"{output_dir}/reconstructions/{mask_name_1}/{first_ens}/{first_mem}/recon_pCO2_{first_ens}_{first_mem}_mon_1x1_{init_date}_{fin_date}.zarr"
+    recon_path_2 = f"{output_dir}/reconstructions/{mask_name_2}/{first_ens}/{first_mem}/recon_pCO2_{first_ens}_{first_mem}_mon_1x1_{init_date}_{fin_date}.zarr"
+
+    print(f"Loading Zarr: {recon_path_1}")
+    recon1_full_members = xr.open_zarr(recon_path_1, consolidated=True)["pCO2_recon_full"]
+    print(f"Loading Zarr: {recon_path_2}")
+    recon2_full_members = xr.open_zarr(recon_path_2, consolidated=True)["pCO2_recon_full"]
+
+    # --- Handle Member Dimension ---
+    member_dim_name = 'member'
+    # Process recon1
+    if member_dim_name in recon1_full_members.dims and recon1_full_members.dims[member_dim_name] > 1:
+        recon1_full = recon1_full_members.isel({member_dim_name: 0})
+    elif member_dim_name in recon1_full_members.dims and recon1_full_members.dims[member_dim_name] == 1:
+        recon1_full = recon1_full_members.squeeze(dim=member_dim_name, drop=True)
+    else:
+        recon1_full = recon1_full_members
+    # Process recon2
+    if member_dim_name in recon2_full_members.dims and recon2_full_members.dims[member_dim_name] > 1:
+        recon2_full = recon2_full_members.isel({member_dim_name: 0})
+    elif member_dim_name in recon2_full_members.dims and recon2_full_members.dims[member_dim_name] == 1:
+        recon2_full = recon2_full_members.squeeze(dim=member_dim_name, drop=True)
+    else:
+        recon2_full = recon2_full_members
+    print("Selected first member (if applicable) for both reconstructions.")
+
+    # --- Calculate Seasonal Means ---
+    print("Calculating seasonal means for reconstructions...")
+    seasons_order = ['DJF', 'MAM', 'JJA', 'SON']
+    recon1_seasonal = recon1_full.groupby('time.season').mean(dim="time").sel(season=seasons_order)
+    recon2_seasonal = recon2_full.groupby('time.season').mean(dim="time").sel(season=seasons_order)
+    diff_seasonal = recon2_seasonal - recon1_seasonal
+    print("Seasonal means calculated.")
+
+    # --- Align Longitude ---
+    print("Aligning longitude for difference map...")
+    # Use 'lon' if 'xlon' is not present, adapt as necessary
+    lon_coord_name = 'xlon' if 'xlon' in diff_seasonal.dims else 'lon' if 'lon' in diff_seasonal.dims else None
+
+    if lon_coord_name:
+         diff_seasonal = diff_seasonal.roll({lon_coord_name: len(diff_seasonal[lon_coord_name]) // 2}, roll_coords=True)
+         diff_seasonal[lon_coord_name] = (diff_seasonal[lon_coord_name] + 180) % 360 - 180
+         print(f"Longitude coordinates ('{lon_coord_name}') adjusted to -180 to 180.")
+    else:
+         print("Warning: Longitude dimension ('xlon' or 'lon') not found in diff_seasonal. Skipping longitude alignment.")
+
+
+    # --- Plotting ---
+    print("Generating 1x4 seasonal difference plots...")
+    with plt.style.context(plot_style):
+        # Create a figure with 1 row and 4 columns - make it wide
+        fig = plt.figure(figsize=(22, 6), dpi=200) # Adjusted figsize for 1x4
+
+        try:
+            # Check if SpatialMap2 exists before trying to use it
+            if 'SpatialMap2' not in globals():
+                 raise NameError("SpatialMap2 class is not defined. Please define or import it.")
+
+            # Initialize your map class with 1x4 layout
+            worldmap = SpatialMap2(
+                fig=fig,
+                region="world",
+                cbar_mode="each",
+                colorbar=True,
+                cbar_location="bottom",
+                nrows_ncols=[1, 4] # **** CHANGED TO 1x4 ****
+            )
+        except NameError as e:
+             print(f"Error: {e}")
+             plt.close(fig)
+             return
+        except Exception as e:
+             print(f"Error initializing SpatialMap2: {e}")
+             plt.close(fig)
+             return
+
+        # Check for latitude coordinate name
+        lat_coord_name = 'ylat' if 'ylat' in diff_seasonal.dims else 'lat' if 'lat' in diff_seasonal.dims else None
+        if not lat_coord_name:
+            print("Error: Latitude dimension ('ylat' or 'lat') not found in diff_seasonal. Cannot plot.")
+            plt.close(fig)
+            return
+        if not lon_coord_name: # Re-check after alignment attempt
+             print("Error: Longitude dimension ('xlon' or 'lon') not found in diff_seasonal. Cannot plot.")
+             plt.close(fig)
+             return
+
+
+        # Loop through each season and plot the difference
+        # The axis index 'i' (0, 1, 2, 3) directly corresponds to the
+        # flattened index of the 1x4 grid.
+        for i, season in enumerate(seasons_order):
+            print(f"  Plotting difference for season: {season} on axis index {i}")
+            ax_idx_diff  = i # Direct mapping: 0->leftmost, ..., 3->rightmost
+
+            diff_s = diff_seasonal.sel(season=season)
+
+            # Plot the difference map for the current season
+            try:
+                sub_diff = worldmap.add_plot(
+                    lon=diff_s[lon_coord_name], # Use identified lon coord
+                    lat=diff_s[lat_coord_name], # Use identified lat coord
+                    data=diff_s,
+                    vrange=diff_vrange,
+                    cmap=cmap_diff_obj, # Pass the actual colormap object
+                    ax=ax_idx_diff,
+                )
+                worldmap.set_title(
+                    f"Mean Recon Diff ({season})\n({mask_name_2} - {mask_name_1})",
+                    ax=ax_idx_diff, fontsize=11, # Adjust font size if needed
+                )
+                cbar_diff = worldmap.add_colorbar(sub_diff, ax=ax_idx_diff)
+                # Make sure colorbar label font size is appropriate
+                worldmap.set_cbar_xlabel(cbar_diff, f"Mean Δ pCO₂ ({season}) (µatm)", fontsize=9)
+
+                # Optional: Add coastlines/land if SpatialMap2 supports it
+                # worldmap.add_coastlines(ax=ax_idx_diff)
+                # worldmap.add_land(ax=ax_idx_diff)
+
+            except Exception as e:
+                 print(f"Error plotting Difference for {season} on axis {ax_idx_diff}: {e}")
+                 # Attempt to set an error title even if plotting fails
+                 try:
+                    worldmap.set_title(f"Mean Recon Diff ({season})\nPLOT ERROR", ax=ax_idx_diff, fontsize=11)
+                 except:
+                    print(f"  Could not set error title for axis {ax_idx_diff}.")
+
+
+        # Adjust layout for 1x4 grid
+        # Use subplots_adjust, focusing on wspace and bottom/top margins
+        plt.subplots_adjust(
+            left=0.04,    # Small left margin
+            right=0.98,   # Small right margin
+            bottom=0.22,  # Need enough space for colorbars + labels
+            top=0.85,     # Need space for titles
+            wspace=0.15,  # Space between the plots (adjust as needed)
+            hspace=0      # Not applicable for single row
+        )
+        print(f"Using subplots_adjust for 1x4 layout.")
+
+
+        plt.show()
+        print("Plotting complete.")
