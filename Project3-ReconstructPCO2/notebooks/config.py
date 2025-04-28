@@ -1,15 +1,15 @@
 ### Configuration file for the project
 ### This file contains all the paths and parameters used in the project
 
-socat_path = "gs://leap-persistent/abbysh/zarr_files_/socat_mask_feb1982-dec2023.zarr"
-path_seeds = (
+SOCAT_PATH = "gs://leap-persistent/abbysh/zarr_files_/socat_mask_feb1982-dec2023.zarr"
+PATH_SEEDS = (
     "gs://leap-persistent/abbysh/pickles/random_seeds.npy"  # random seeds for ML
 )
-grid_search_approach = "nmse"
-MLinputs_path = "gs://leap-persistent/Mukkke/pco2_residual/post01_xgb_inputs"
-ensemble_dir = "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members"  # path to regridded data
+GRID_SEARCH_APPROACH = "nmse"
+MLINPUTS_PATH = "gs://leap-persistent/Mukkke/pco2_residual/post01_xgb_inputs"
+ENSEMBLE_DIR = "gs://leap-persistent/abbysh/pco2_all_members_1982-2023/00_regridded_members"  # path to regridded data
 
-features_sel = [
+FEATURES_SEL = [
     "sst",
     "sst_anom",
     "sss",
@@ -26,6 +26,6 @@ features_sel = [
 ]
 
 # the target variable we reconstruct:
-target_sel = [
+TARGET_SEL = [
     "pco2_residual"
 ]  # this represents pCO2 - pCO2-T (calculated in notebook 00)
