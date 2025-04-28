@@ -3,7 +3,7 @@
 **Authors**  
 Azam Khan, Bokai He, Sarah Pariser, Zhi Wang
 
-Contribution Statement: *write hear...*
+Contribution Statement: *write here...*
 
 Group 1 – Ocean Mixing Story  
 Columbia University  
