@@ -1,28 +1,3 @@
-# **Project 3: Machine Learning Reconstruction of Surface Ocean pCO₂**
-
-## Project Subtitle
-
-### Group 1: Azam Khan, Bokai He, Sarah Pariser, Zhi Wang
-
----
-
-## Overview
-
-This project reproduces and extends portions of the analysis presented by Gloege et al. (2020) and Heimdal et al. (2024), using machine learning to reconstruct surface ocean partial pressure of CO₂ (pCO₂) and evaluate reconstruction performance under sparse observational coverage.
-
-The notebook implements a **pCO₂-Residual** approach with an **XGBoost** model to improve upon standard pCO₂ reconstructions by isolating and removing the temperature-driven signal prior to machine learning regression. It also evaluates performance using data from the **Large Ensemble Testbed (LET)**.
-
-### Research Question:
-
-
-### Tasks Addresed:
-- Trained NGBoost
-- ...
-
-### Contribution Statement:
-
----
-
 ## Peer Review Instructions:
 
 1. Clone the repository:
