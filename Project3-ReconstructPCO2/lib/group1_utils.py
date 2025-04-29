@@ -17,6 +17,149 @@ from . import residual_utils as supporting_functions
 # import ./residual_utils.py as supporting_functions
 
 
+def add_new(non_zero_counts, socat_mask_data):
+    addmeanp_oceans = non_zero_counts.copy(deep=True)
+    addmeanp_socat = socat_mask_data.copy(deep=True)
+
+    addmeanp_oceans.loc[dict(xlon=slice(-97, -87), ylat=slice(-46, -36))] = (
+        34  # Pacific 1
+    )
+    addmeanp_oceans.loc[dict(xlon=slice(-130, -110), ylat=slice(-45, -35))] = (
+        34  # Pacific 2
+    )
+    addmeanp_oceans.loc[dict(xlon=slice(-141, -121), ylat=slice(-32, -27))] = (
+        34  # Pacific 3
+    )
+    addmeanp_oceans.loc[dict(xlon=slice(-60, -40), ylat=slice(-77, -67))] = (
+        34  # Southern Ocean
+    )
+    addmeanp_oceans.loc[dict(xlon=slice(75, 85), ylat=slice(-11, 9))] = (
+        33  # Indian Ocean 1
+    )
+    addmeanp_oceans.loc[dict(xlon=slice(70, 90), ylat=slice(-30, -25))] = (
+        33  # Indian Ocean 2
+    )
+
+    ref_val1 = socat_mask_data["socat_mask"].sel(xlon=-11.5, ylat=40.5)
+    ref_val2 = socat_mask_data["socat_mask"].sel(xlon=154.5, ylat=43.5)
+
+    addmeanp_socat["socat_mask"].loc[
+        dict(ylat=slice(-46, -36), xlon=slice(-97, -87))
+    ] = ref_val1
+    addmeanp_socat["socat_mask"].loc[
+        dict(ylat=slice(-45, -35), xlon=slice(-130, -120))
+    ] = ref_val1
+    addmeanp_socat["socat_mask"].loc[
+        dict(ylat=slice(-32, -27), xlon=slice(-141, -121))
+    ] = ref_val1
+    addmeanp_socat["socat_mask"].loc[
+        dict(ylat=slice(-77, -67), xlon=slice(-60, -40))
+    ] = ref_val1
+
+    addmeanp_socat["socat_mask"].loc[dict(ylat=slice(-11, 9), xlon=slice(75, 85))] = (
+        ref_val2
+    )
+    addmeanp_socat["socat_mask"].loc[dict(ylat=slice(-30, -25), xlon=slice(70, 90))] = (
+        ref_val2
+    )
+
+    # Adding 30% more values to undersampled oceans, in currently unsampled locations
+    add30p_oceans = non_zero_counts.copy(deep=True)
+    add30p_socat = socat_mask_data.copy(deep=True)
+    add30p_oceans.loc[dict(xlon=slice(-97, -87), ylat=slice(-46, -36))] = 73  # pacific1
+    add30p_oceans.loc[dict(xlon=slice(-130, -110), ylat=slice(-45, -35))] = (
+        73  # pacific2
+    )
+    add30p_oceans.loc[dict(xlon=slice(-141, -121), ylat=slice(-32, -27))] = (
+        73  # pacific3
+    )
+    add30p_oceans.loc[dict(xlon=slice(-60, -40), ylat=slice(-77, -67))] = (
+        73  # southern ocean
+    )
+
+    add30p_oceans.loc[dict(xlon=slice(75, 85), ylat=slice(-11, 9))] = (
+        72  # indian ocean1
+    )
+    add30p_oceans.loc[dict(xlon=slice(70, 90), ylat=slice(-30, -25))] = (
+        72  # indian ocean2
+    )
+
+    ref_val3 = socat_mask_data["socat_mask"].sel(xlon=-27.5, ylat=62.5)
+    ref_val4 = socat_mask_data["socat_mask"].sel(xlon=-87.5, ylat=18.5)
+
+    add30p_socat["socat_mask"].loc[dict(ylat=slice(-46, -36), xlon=slice(-97, -87))] = (
+        ref_val3
+    )
+    add30p_socat["socat_mask"].loc[
+        dict(ylat=slice(-45, -35), xlon=slice(-130, -120))
+    ] = ref_val3
+    add30p_socat["socat_mask"].loc[
+        dict(ylat=slice(-32, -27), xlon=slice(-141, -121))
+    ] = ref_val3
+    add30p_socat["socat_mask"].loc[dict(ylat=slice(-77, -67), xlon=slice(-60, -40))] = (
+        ref_val3
+    )
+    add30p_socat["socat_mask"].loc[dict(ylat=slice(-11, 9), xlon=slice(75, 85))] = (
+        ref_val3
+    )
+    add30p_socat["socat_mask"].loc[dict(ylat=slice(-30, -25), xlon=slice(70, 90))] = (
+        ref_val4
+    )
+
+    # Adding 52% more values to undersampled oceans, in currently unsampled locations
+    add50p_oceans = non_zero_counts.copy(deep=True)
+    add50p_socat = socat_mask_data.copy(deep=True)
+    add50p_oceans.loc[dict(xlon=slice(-97, -87), ylat=slice(-46, -36))] = (
+        125  # pacific1
+    )
+    add50p_oceans.loc[dict(xlon=slice(-130, -110), ylat=slice(-45, -35))] = (
+        125  # pacific2
+    )
+    add50p_oceans.loc[dict(xlon=slice(-141, -121), ylat=slice(-32, -27))] = (
+        125  # pacific3
+    )
+    add50p_oceans.loc[dict(xlon=slice(-60, -40), ylat=slice(-77, -67))] = (
+        125  # southern ocean
+    )
+    add50p_oceans.loc[dict(xlon=slice(75, 85), ylat=slice(-11, 9))] = (
+        125  # indian ocean1
+    )
+    add50p_oceans.loc[dict(xlon=slice(70, 90), ylat=slice(-30, -25))] = (
+        125  # indian ocean2
+    )
+
+    ref_val5 = socat_mask_data["socat_mask"].sel(xlon=-76.5, ylat=25.5)
+    ref_val6 = socat_mask_data["socat_mask"].sel(xlon=-77.5, ylat=25.5)
+
+    add50p_socat["socat_mask"].loc[dict(ylat=slice(-46, -36), xlon=slice(-97, -87))] = (
+        ref_val5
+    )
+    add50p_socat["socat_mask"].loc[
+        dict(ylat=slice(-45, -35), xlon=slice(-130, -120))
+    ] = ref_val5
+    add50p_socat["socat_mask"].loc[
+        dict(ylat=slice(-32, -27), xlon=slice(-141, -121))
+    ] = ref_val5
+    add50p_socat["socat_mask"].loc[dict(ylat=slice(-77, -67), xlon=slice(-60, -40))] = (
+        ref_val6
+    )
+    add50p_socat["socat_mask"].loc[dict(ylat=slice(-11, 9), xlon=slice(75, 85))] = (
+        ref_val6
+    )
+    add50p_socat["socat_mask"].loc[dict(ylat=slice(-30, -25), xlon=slice(70, 90))] = (
+        ref_val6
+    )
+
+    return (
+        addmeanp_oceans,
+        addmeanp_socat,
+        add30p_oceans,
+        add30p_socat,
+        add50p_oceans,
+        add50p_socat,
+    )
+
+
 def apply_socat_mask_inplace(df, mask_dataset) -> None:
     """
     Fast in-place assignment of 'socat_mask' from an xarray.Dataset to a DataFrame with MultiIndex (time, ylat, xlon).
