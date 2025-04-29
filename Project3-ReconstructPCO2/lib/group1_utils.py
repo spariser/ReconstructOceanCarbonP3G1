@@ -603,7 +603,8 @@ def calc_recon_pco2(
             pco2_unseen_stds = pco2T_series + pCO2R_unseen_stds_series
             pco2_full = pco2T_series + pCO2R_full_series
             pco2_full_means = pco2T_series + pCO2_full_means_series
-            pco2_full_stds = pco2T_series + pCO2_full_stds_series
+            pco2_full_stds = pCO2_full_stds_series
+            # pco2_full_stds = pco2T_series + pCO2_full_stds_series
             # pco2_train =  pco2T_series + pCO2R_train_series
             # pco2_test =  pco2T_series + pCO2R_test_series
             pco2_truth = pco2T_series + pCO2R_truth
