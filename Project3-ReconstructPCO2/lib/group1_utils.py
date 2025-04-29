@@ -16,6 +16,20 @@ from . import residual_utils as supporting_functions
 # import residual_utils as supporting_functions
 # import ./residual_utils.py as supporting_functions
 
+def add_to_existing(non_zero_counts, socat_mask_data):
+     mean_val_glob_loc = non_zero_counts.where((non_zero_counts > non_zero_counts.mean()) | (non_zero_counts == 0), 5)
+     socat_mean_glob = socat_mask_data.where((non_zero_counts > non_zero_counts.mean()) | (non_zero_counts == 0),
+                                             socat_mask_data.sel(xlon=-172.5, ylat=-75.5),)
+ 
+     thirtyp_val_glob = non_zero_counts.where((non_zero_counts > 7) | (non_zero_counts == 0), 7)    
+     socat_30p_glob = socat_mask_data.where((non_zero_counts > 7) | (non_zero_counts == 0),
+                                            socat_mask_data.sel(xlon=171.5, ylat=-39.5),)
+     
+     fiftyp_val_glob = non_zero_counts.where((non_zero_counts > 10) | (non_zero_counts == 0), 10)
+     socat_50p_glob = socat_mask_data.where((non_zero_counts > 9) | (non_zero_counts == 0),
+                                            socat_mask_data.sel(xlon=132.5, ylat=-54.5),)
+ 
+     return mean_val_glob_loc, socat_mean_glob, thirtyp_val_glob, socat_30p_glob, fiftyp_val_glob, socat_50p_glob
 
 def add_new(non_zero_counts, socat_mask_data):
     addmeanp_oceans = non_zero_counts.copy(deep=True)
