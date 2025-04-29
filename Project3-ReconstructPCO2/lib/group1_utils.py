@@ -16,20 +16,41 @@ from . import residual_utils as supporting_functions
 # import residual_utils as supporting_functions
 # import ./residual_utils.py as supporting_functions
 
+
 def add_to_existing(non_zero_counts, socat_mask_data):
-     mean_val_glob_loc = non_zero_counts.where((non_zero_counts > non_zero_counts.mean()) | (non_zero_counts == 0), 5)
-     socat_mean_glob = socat_mask_data.where((non_zero_counts > non_zero_counts.mean()) | (non_zero_counts == 0),
-                                             socat_mask_data.sel(xlon=-172.5, ylat=-75.5),)
- 
-     thirtyp_val_glob = non_zero_counts.where((non_zero_counts > 7) | (non_zero_counts == 0), 7)    
-     socat_30p_glob = socat_mask_data.where((non_zero_counts > 7) | (non_zero_counts == 0),
-                                            socat_mask_data.sel(xlon=171.5, ylat=-39.5),)
-     
-     fiftyp_val_glob = non_zero_counts.where((non_zero_counts > 10) | (non_zero_counts == 0), 10)
-     socat_50p_glob = socat_mask_data.where((non_zero_counts > 9) | (non_zero_counts == 0),
-                                            socat_mask_data.sel(xlon=132.5, ylat=-54.5),)
- 
-     return mean_val_glob_loc, socat_mean_glob, thirtyp_val_glob, socat_30p_glob, fiftyp_val_glob, socat_50p_glob
+    mean_val_glob_loc = non_zero_counts.where(
+        (non_zero_counts > non_zero_counts.mean()) | (non_zero_counts == 0), 5
+    )
+    socat_mean_glob = socat_mask_data.where(
+        (non_zero_counts > non_zero_counts.mean()) | (non_zero_counts == 0),
+        socat_mask_data.sel(xlon=-172.5, ylat=-75.5),
+    )
+
+    thirtyp_val_glob = non_zero_counts.where(
+        (non_zero_counts > 7) | (non_zero_counts == 0), 7
+    )
+    socat_30p_glob = socat_mask_data.where(
+        (non_zero_counts > 7) | (non_zero_counts == 0),
+        socat_mask_data.sel(xlon=171.5, ylat=-39.5),
+    )
+
+    fiftyp_val_glob = non_zero_counts.where(
+        (non_zero_counts > 10) | (non_zero_counts == 0), 10
+    )
+    socat_50p_glob = socat_mask_data.where(
+        (non_zero_counts > 9) | (non_zero_counts == 0),
+        socat_mask_data.sel(xlon=132.5, ylat=-54.5),
+    )
+
+    return (
+        mean_val_glob_loc,
+        socat_mean_glob,
+        thirtyp_val_glob,
+        socat_30p_glob,
+        fiftyp_val_glob,
+        socat_50p_glob,
+    )
+
 
 def add_new(non_zero_counts, socat_mask_data):
     addmeanp_oceans = non_zero_counts.copy(deep=True)
@@ -649,7 +670,8 @@ def calc_recon_pco2(
     mask_name,
     init_date,
     fin_date,
-    owner_name=None,
+    owner_name,
+    your_username,
 ):
     """
     Calculates reconstructed pco2 per member.
@@ -666,7 +688,7 @@ def calc_recon_pco2(
     init_date_sel = pd.to_datetime(init_date, format="%Y%m")
     fin_date_sel = pd.to_datetime(fin_date, format="%Y%m")
 
-    if owner_name:
+    if owner_name != your_username:
         print(
             "Reviewing process: Running ML only for the first member of the first ESM, loading remaining reconstructed data from the notebook owner."
         )
@@ -679,7 +701,7 @@ def calc_recon_pco2(
         }  # Create a dictionary with only the first ensemble and member
 
         grid_search_approach = "nmse"
-        owener_output_dir = f"gs://leap-persistent/{owner_name}/{owner_name}/pco2_residual/{grid_search_approach}/post02_xgb"  # where to save machine learning results
+        owener_output_dir = f"gs://leap-persistent/{your_username}/{owner_name}/pco2_residual/{grid_search_approach}/post02_xgb"  # where to save machine learning results
         owener_recon_output_dir = f"{owener_output_dir}/reconstructions/{mask_name}"  # where owner save ML reconstructions
 
     else:
@@ -809,7 +831,7 @@ def calc_recon_pco2(
 
             print(f"finished with {member}")
 
-    if owner_name:
+    if owner_name == your_username:
         print("Copying remaining members from owner’s directory...")
         for ens, mem_list in selected_mems_dict.items():
             print(f"On member {member}")
