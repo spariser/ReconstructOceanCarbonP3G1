@@ -127,6 +127,6 @@ Project3/
 │   ├── config.py # Configuration file for the project containing constants
 │   └── visualization.py       # Custom plotting class SpatialMap2 for creating high-quality spatial visualizations with colorbars and map features using Cartopy and Matplotlib.
 ├── notebooks/
-│   └── Group1_data_story.ipynb # Main notebook containing full analysis & data story
+│   └── Oceanmixing_Group1.ipynb # Main notebook containing full analysis & data story
 ```
 
