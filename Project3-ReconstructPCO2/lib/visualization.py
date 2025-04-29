@@ -2943,6 +2943,11 @@ def calculate_p_value_map(mean_A, std_A, mean_B, std_B):
     return p_values
 
 
+# Import necessary libraries first
+from matplotlib.colors import LinearSegmentedColormap
+import scipy.stats as stats
+import numpy as np
+
 def plot_reconstruction_comparison_panel_full(
     mask_name_1,
     mask_name_2,
@@ -2954,18 +2959,16 @@ def plot_reconstruction_comparison_panel_full(
     diff_vrange_std=[-5, 5],
     pval_vrange=[0, 0.1],
     cmap_diff="RdBu_r",
-    cmap_pval="viridis_r",
     plot_style="seaborn-v0_8-talk",
 ):
-    """
-    Plots a 3-panel comparison:
-    - Mean Reconstruction Difference
-    - Mean STD Difference
-    - p-value map
-    Using SpatialMap2.
-    """
+    """Modified version with corrected p-value calculation and visualization"""
+    # Get the standard colormap for differences
     cmap_diff = mpl_cm.get_cmap(cmap_diff)
-    cmap_pval = mpl_cm.get_cmap(cmap_pval)
+    
+    # Create custom p-value colormap (white to red, increasing significance)
+    white_to_red = LinearSegmentedColormap.from_list(
+        'white_to_red', [(1, 1, 1), (1, 0.8, 0.8), (1, 0.5, 0.5), (1, 0, 0), (0.7, 0, 0)], N=256)
+    cmap_pval = white_to_red
 
     try:
         first_ens = list(selected_mems_dict.keys())[0]
@@ -2973,55 +2976,102 @@ def plot_reconstruction_comparison_panel_full(
 
         base_path_str = f"{output_dir}/reconstructions/{{mask_name}}/{first_ens}/{first_mem}/recon_pCO2_{first_ens}_{first_mem}_mon_1x1_{init_date}_{fin_date}.zarr"
 
-        # --- Load mean reconstructions ---
+        # --- Load reconstruction data ---
         path1 = base_path_str.format(mask_name=mask_name_1)
         path2 = base_path_str.format(mask_name=mask_name_2)
 
         recon1_full = xr.open_zarr(path1, consolidated=True)
         recon2_full = xr.open_zarr(path2, consolidated=True)
 
-        mean1 = (
-            recon1_full["pCO2_recon_full_mean"]
-            .mean(dim="time", skipna=True)
-            .squeeze(drop=True)
-        )
-        mean2 = (
-            recon2_full["pCO2_recon_full_mean"]
-            .mean(dim="time", skipna=True)
-            .squeeze(drop=True)
-        )
+        # --- Load means and standard deviations for display ---
+        mean1 = recon1_full["pCO2_recon_full_mean"].mean(dim="time", skipna=True).squeeze(drop=True)
+        mean2 = recon2_full["pCO2_recon_full_mean"].mean(dim="time", skipna=True).squeeze(drop=True)
+        std1 = recon1_full["pCO2_recon_full_std"].mean(dim="time", skipna=True).squeeze(drop=True)
+        std2 = recon2_full["pCO2_recon_full_std"].mean(dim="time", skipna=True).squeeze(drop=True)
 
-        # --- Load mean STDs ---
-        std1 = (
-            recon1_full["pCO2_recon_full_std"]
-            .mean(dim="time", skipna=True)
-            .squeeze(drop=True)
-        )
-        std2 = (
-            recon2_full["pCO2_recon_full_std"]
-            .mean(dim="time", skipna=True)
-            .squeeze(drop=True)
-        )
-
-        # --- Calculate differences ---
+        # --- Calculate differences for display ---        
         mean_diff = mean2 - mean1
         std_diff = std2 - std1
 
-        # --- Calculate p-value map ---
+        # --- Load full reconstruction data for p-value calculation ---
+        if "pCO2_recon_full" in recon1_full.data_vars:
+            recon1 = recon1_full["pCO2_recon_full"]
+            recon2 = recon2_full["pCO2_recon_full"]
+        else:
+            # Fallback to means if full reconstructions not available
+            recon1 = recon1_full["pCO2_recon_full_mean"]
+            recon2 = recon2_full["pCO2_recon_full_mean"]
+
+        # --- Calculate p-value using a similar approach to the reference code ---
         print("Calculating p-value map...")
-        pval_map = calculate_p_value_map(
-            mean1.values, std1.values, mean2.values, std2.values
+        
+        # Get time dimension size
+        n = len(recon1["time"])
+        
+        # Force computation before statistical operations
+        recon1_np = recon1.compute().values
+        recon2_np = recon2.compute().values
+        
+        # Get dimensions of the data
+        time_dim = 0  # Assuming time is the first dimension
+        shape = recon1_np.shape
+        
+        # Initialize arrays for results
+        diff = np.full(shape[1:], np.nan)
+        diff_std = np.full(shape[1:], np.nan)
+        t_stat = np.full(shape[1:], np.nan)
+        p_values_np = np.full(shape[1:], np.nan)
+        
+        # Loop through each spatial point to avoid empty slice warnings
+        for i in range(shape[1]):
+            for j in range(shape[2]):
+                # Get time series for this point from both reconstructions
+                ts1 = recon1_np[:, i, j]
+                ts2 = recon2_np[:, i, j]
+                
+                # Skip if either series has no valid data
+                if np.all(np.isnan(ts1)) or np.all(np.isnan(ts2)):
+                    continue
+                
+                # Calculate difference series
+                diff_series = ts2 - ts1
+                
+                # Calculate mean difference
+                diff[i, j] = np.nanmean(diff_series)
+                
+                # Calculate standard deviation of differences
+                # Only if we have at least 2 valid data points for degrees of freedom
+                valid_diffs = diff_series[~np.isnan(diff_series)]
+                if len(valid_diffs) > 1:  # Need at least 2 points for std dev
+                    diff_std[i, j] = np.nanstd(diff_series, ddof=1)  # ddof=1 for sample std dev
+                    
+                    # Calculate t-statistic and p-value only if std dev is not zero or nan
+                    if diff_std[i, j] > 0:
+                        t_stat[i, j] = diff[i, j] / (diff_std[i, j] / np.sqrt(len(valid_diffs)))
+                        p_values_np[i, j] = 2 * stats.t.sf(abs(t_stat[i, j]), df=len(valid_diffs)-1)
+        
+        # Create p-value DataArray with proper coordinates
+        p_values = xr.DataArray(
+            data=p_values_np,
+            dims=mean_diff.dims,
+            coords=mean_diff.coords
         )
-        print(f"Number of valid (non-NaN) p-values: {np.isfinite(pval_map).sum()}")
+        
+        # Calculate statistics on significant areas
+        sig_threshold = 0.05
+        ocean_mask = ~np.isnan(p_values_np)
+        total_ocean_cells = np.sum(ocean_mask)
+        sig_cells = np.sum((p_values_np <= sig_threshold) & ocean_mask)
+        sig_percentage = (sig_cells / total_ocean_cells) * 100 if total_ocean_cells > 0 else 0
+        
+        print(f"Number of valid (non-NaN) p-values: {total_ocean_cells}")
+        print(f"Significant areas (p < {sig_threshold}): {sig_cells} pixels ({sig_percentage:.1f}%)")
 
         # --- Get coordinates ---
         lon_coords = mean1["xlon"] if "xlon" in mean1.coords else mean1["lon"]
         lat_coords = mean1["ylat"] if "ylat" in mean1.coords else mean1["lat"]
 
         # --- Plotting ---
-        if "SpatialMap2" not in globals():
-            raise NameError("SpatialMap2 class is not defined or imported.")
-
         with plt.style.context(plot_style):
             fig = plt.figure(figsize=(18, 5), dpi=200)
             worldmap = SpatialMap2(
@@ -3063,47 +3113,42 @@ def plot_reconstruction_comparison_panel_full(
                 fontsize=13,
             )
 
-            # 3. p-value Map
+            # 3. Corrected p-value Map
             sub2 = worldmap.add_plot(
                 lon=lon_coords,
                 lat=lat_coords,
-                data=pval_map,
+                data=p_values,
                 vrange=pval_vrange,
                 cmap=cmap_pval,
                 ax=2,
             )
             worldmap.set_title(
-                f"p-value Map\n({mask_name_2} vs {mask_name_1})", ax=2, fontsize=13
+                f"p-value Map (white→red: low→high significance)\n({mask_name_2} vs {mask_name_1})", 
+                ax=2, 
+                fontsize=13,
             )
 
-            # Colorbars
-            # cbar0 = worldmap.add_colorbar(sub0, ax=0)
-            # cbar1 = worldmap.add_colorbar(sub1, ax=1)
-            # cbar2 = worldmap.add_colorbar(sub2, ax=2)
-            cbar0 = worldmap.add_colorbar(
-                sub0, ax=0, cmap=cmap_diff, vrange=diff_vrange_recon
-            )
-            cbar1 = worldmap.add_colorbar(
-                sub1, ax=1, cmap=cmap_diff, vrange=diff_vrange_std
-            )
-            cbar2 = worldmap.add_colorbar(
-                sub2, ax=2, cmap=cmap_pval, vrange=pval_vrange
-            )
+            # Set colorbars
+            cbar0 = worldmap.add_colorbar(sub0, ax=0, cmap=cmap_diff, vrange=diff_vrange_recon)
+            cbar1 = worldmap.add_colorbar(sub1, ax=1, cmap=cmap_diff, vrange=diff_vrange_std)
+            cbar2 = worldmap.add_colorbar(sub2, ax=2, cmap=cmap_pval, vrange=pval_vrange)
 
+            # Set colorbar labels
             worldmap.set_cbar_xlabel(cbar0, "\u0394 pCO₂ (\u03bcatm)", fontsize=11)
             worldmap.set_cbar_xlabel(cbar1, "\u0394 STD pCO₂ (\u03bcatm)", fontsize=11)
-            worldmap.set_cbar_xlabel(cbar2, "p-value", fontsize=11)
+            worldmap.set_cbar_xlabel(cbar2, "p-value (< 0.05 indicates significance)", fontsize=11)
+            
+            # Set finer ticks on p-value colorbar to highlight 0.05 threshold
+            worldmap.set_ticks(cbar2, 0, 0.1, 0.02)
 
             plt.tight_layout()
             plt.show()
             print("Plotting complete.")
 
-    except FileNotFoundError as e:
-        print(f"Error: File not found. {e}")
-    except KeyError as e:
-        print(f"Error: Key error. {e}")
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        print(f"An error occurred: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 
