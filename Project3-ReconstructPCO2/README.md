@@ -45,6 +45,6 @@ Project3/
 Group 1:
 - Sarah Pariser:  Created masks; streamlined code/story; contributed to written introduction & conclusion
 - Azam Khan: Setup pipeline to train ngboost models; wrote visualization functions & analysis
-- Bokai He: 
-- Victor Wang: 
+- Bokai He: statistical significance analysis, including p-value & t-test; NGBoost & XGBoost comparison
+- Victor Wang: Seasonality analysis & visualization
 
