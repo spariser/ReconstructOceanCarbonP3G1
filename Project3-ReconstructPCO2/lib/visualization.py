@@ -11,10 +11,21 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import cartopy.feature as cfeature
 import gcsfs
+import pandas as pd
+
+import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
+from scipy import stats
 
 
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import matplotlib.ticker as mticker
+
+from IPython.display import Markdown, display
+
+
+def printmd(string):
+    display(Markdown(string))
 
 
 class SpatialMap2(object):
@@ -418,6 +429,8 @@ def plot_mask(mask, title, vrange=[0, 144, 12]):
         plt.show()
         # save figure
         # fig.savefig(f"mask_{title}.png", dpi=300, bbox_inches="tight")
+
+
 def plot_maskd(mask, title, vrange=[0, 144, 12]):
     """
     Plots a mask on a world map using a specified colormap and saves the figure.
@@ -456,11 +469,14 @@ def plot_maskd(mask, title, vrange=[0, 144, 12]):
         )
 
         col = worldmap.add_colorbar(sub, ax=0, extend="max")
-        worldmap.set_cbar_xlabel(col, "Change in number of months with data", fontsize=14)
+        worldmap.set_cbar_xlabel(
+            col, "Change in number of months with data", fontsize=14
+        )
         worldmap.set_ticks(col, vrange[0], vrange[1], vrange[2])
         col.ax.tick_params(labelsize=12)
         worldmap.set_title(title, ax=0, fontsize=14)
         plt.show()
+
 
 def plot_reconstruction_vs_truth(
     mask_name,
@@ -2948,6 +2964,7 @@ from matplotlib.colors import LinearSegmentedColormap
 import scipy.stats as stats
 import numpy as np
 
+
 def plot_reconstruction_comparison_panel_full(
     mask_name_1,
     mask_name_2,
@@ -2964,10 +2981,13 @@ def plot_reconstruction_comparison_panel_full(
     """Modified version with corrected p-value calculation and visualization"""
     # Get the standard colormap for differences
     cmap_diff = mpl_cm.get_cmap(cmap_diff)
-    
+
     # Create custom p-value colormap (white to red, increasing significance)
     white_to_red = LinearSegmentedColormap.from_list(
-        'white_to_red', [(1, 1, 1), (1, 0.8, 0.8), (1, 0.5, 0.5), (1, 0, 0), (0.7, 0, 0)], N=256)
+        "white_to_red",
+        [(1, 1, 1), (1, 0.8, 0.8), (1, 0.5, 0.5), (1, 0, 0), (0.7, 0, 0)],
+        N=256,
+    )
     cmap_pval = white_to_red
 
     try:
@@ -2984,12 +3004,28 @@ def plot_reconstruction_comparison_panel_full(
         recon2_full = xr.open_zarr(path2, consolidated=True)
 
         # --- Load means and standard deviations for display ---
-        mean1 = recon1_full["pCO2_recon_full_mean"].mean(dim="time", skipna=True).squeeze(drop=True)
-        mean2 = recon2_full["pCO2_recon_full_mean"].mean(dim="time", skipna=True).squeeze(drop=True)
-        std1 = recon1_full["pCO2_recon_full_std"].mean(dim="time", skipna=True).squeeze(drop=True)
-        std2 = recon2_full["pCO2_recon_full_std"].mean(dim="time", skipna=True).squeeze(drop=True)
+        mean1 = (
+            recon1_full["pCO2_recon_full_mean"]
+            .mean(dim="time", skipna=True)
+            .squeeze(drop=True)
+        )
+        mean2 = (
+            recon2_full["pCO2_recon_full_mean"]
+            .mean(dim="time", skipna=True)
+            .squeeze(drop=True)
+        )
+        std1 = (
+            recon1_full["pCO2_recon_full_std"]
+            .mean(dim="time", skipna=True)
+            .squeeze(drop=True)
+        )
+        std2 = (
+            recon2_full["pCO2_recon_full_std"]
+            .mean(dim="time", skipna=True)
+            .squeeze(drop=True)
+        )
 
-        # --- Calculate differences for display ---        
+        # --- Calculate differences for display ---
         mean_diff = mean2 - mean1
         std_diff = std2 - std1
 
@@ -3004,68 +3040,76 @@ def plot_reconstruction_comparison_panel_full(
 
         # --- Calculate p-value using a similar approach to the reference code ---
         print("Calculating p-value map...")
-        
+
         # Get time dimension size
         n = len(recon1["time"])
-        
+
         # Force computation before statistical operations
         recon1_np = recon1.compute().values
         recon2_np = recon2.compute().values
-        
+
         # Get dimensions of the data
         time_dim = 0  # Assuming time is the first dimension
         shape = recon1_np.shape
-        
+
         # Initialize arrays for results
         diff = np.full(shape[1:], np.nan)
         diff_std = np.full(shape[1:], np.nan)
         t_stat = np.full(shape[1:], np.nan)
         p_values_np = np.full(shape[1:], np.nan)
-        
+
         # Loop through each spatial point to avoid empty slice warnings
         for i in range(shape[1]):
             for j in range(shape[2]):
                 # Get time series for this point from both reconstructions
                 ts1 = recon1_np[:, i, j]
                 ts2 = recon2_np[:, i, j]
-                
+
                 # Skip if either series has no valid data
                 if np.all(np.isnan(ts1)) or np.all(np.isnan(ts2)):
                     continue
-                
+
                 # Calculate difference series
                 diff_series = ts2 - ts1
-                
+
                 # Calculate mean difference
                 diff[i, j] = np.nanmean(diff_series)
-                
+
                 # Calculate standard deviation of differences
                 # Only if we have at least 2 valid data points for degrees of freedom
                 valid_diffs = diff_series[~np.isnan(diff_series)]
                 if len(valid_diffs) > 1:  # Need at least 2 points for std dev
-                    diff_std[i, j] = np.nanstd(diff_series, ddof=1)  # ddof=1 for sample std dev
-                    
+                    diff_std[i, j] = np.nanstd(
+                        diff_series, ddof=1
+                    )  # ddof=1 for sample std dev
+
                     # Calculate t-statistic and p-value only if std dev is not zero or nan
                     if diff_std[i, j] > 0:
-                        t_stat[i, j] = diff[i, j] / (diff_std[i, j] / np.sqrt(len(valid_diffs)))
-                        p_values_np[i, j] = 2 * stats.t.sf(abs(t_stat[i, j]), df=len(valid_diffs)-1)
-        
+                        t_stat[i, j] = diff[i, j] / (
+                            diff_std[i, j] / np.sqrt(len(valid_diffs))
+                        )
+                        p_values_np[i, j] = 2 * stats.t.sf(
+                            abs(t_stat[i, j]), df=len(valid_diffs) - 1
+                        )
+
         # Create p-value DataArray with proper coordinates
         p_values = xr.DataArray(
-            data=p_values_np,
-            dims=mean_diff.dims,
-            coords=mean_diff.coords
+            data=p_values_np, dims=mean_diff.dims, coords=mean_diff.coords
         )
-        
+
         # Calculate statistics on significant areas
         sig_threshold = 0.05
         ocean_mask = ~np.isnan(p_values_np)
         total_ocean_cells = np.sum(ocean_mask)
         sig_cells = np.sum((p_values_np <= sig_threshold) & ocean_mask)
-        sig_percentage = (sig_cells / total_ocean_cells) * 100 if total_ocean_cells > 0 else 0
-        
+        sig_percentage = (
+            (sig_cells / total_ocean_cells) * 100 if total_ocean_cells > 0 else 0
+        )
+
         print(f"Number of valid (non-NaN) p-values: {total_ocean_cells}")
-        print(f"Significant areas (p < {sig_threshold}): {sig_cells} pixels ({sig_percentage:.1f}%)")
+        print(
+            f"Significant areas (p < {sig_threshold}): {sig_cells} pixels ({sig_percentage:.1f}%)"
+        )
 
         # --- Get coordinates ---
         lon_coords = mean1["xlon"] if "xlon" in mean1.coords else mean1["lon"]
@@ -3123,21 +3167,29 @@ def plot_reconstruction_comparison_panel_full(
                 ax=2,
             )
             worldmap.set_title(
-                f"p-value Map (white→red: low→high significance)\n({mask_name_2} vs {mask_name_1})", 
-                ax=2, 
+                f"p-value Map (white→red: low→high significance)\n({mask_name_2} vs {mask_name_1})",
+                ax=2,
                 fontsize=13,
             )
 
             # Set colorbars
-            cbar0 = worldmap.add_colorbar(sub0, ax=0, cmap=cmap_diff, vrange=diff_vrange_recon)
-            cbar1 = worldmap.add_colorbar(sub1, ax=1, cmap=cmap_diff, vrange=diff_vrange_std)
-            cbar2 = worldmap.add_colorbar(sub2, ax=2, cmap=cmap_pval, vrange=pval_vrange)
+            cbar0 = worldmap.add_colorbar(
+                sub0, ax=0, cmap=cmap_diff, vrange=diff_vrange_recon
+            )
+            cbar1 = worldmap.add_colorbar(
+                sub1, ax=1, cmap=cmap_diff, vrange=diff_vrange_std
+            )
+            cbar2 = worldmap.add_colorbar(
+                sub2, ax=2, cmap=cmap_pval, vrange=pval_vrange
+            )
 
             # Set colorbar labels
             worldmap.set_cbar_xlabel(cbar0, "\u0394 pCO₂ (\u03bcatm)", fontsize=11)
             worldmap.set_cbar_xlabel(cbar1, "\u0394 STD pCO₂ (\u03bcatm)", fontsize=11)
-            worldmap.set_cbar_xlabel(cbar2, "p-value (< 0.05 indicates significance)", fontsize=11)
-            
+            worldmap.set_cbar_xlabel(
+                cbar2, "p-value (< 0.05 indicates significance)", fontsize=11
+            )
+
             # Set finer ticks on p-value colorbar to highlight 0.05 threshold
             worldmap.set_ticks(cbar2, 0, 0.1, 0.02)
 
@@ -3148,22 +3200,25 @@ def plot_reconstruction_comparison_panel_full(
     except Exception as e:
         print(f"An error occurred: {e}")
         import traceback
+
         traceback.print_exc()
 
 
-
-
 import matplotlib.pyplot as plt
-import matplotlib.cm as mpl_cm # Assuming you import cm like this
+import matplotlib.cm as mpl_cm  # Assuming you import cm like this
 import xarray as xr
+
 # Assuming SpatialMap2 is defined or imported elsewhere
 # Define a placeholder if running standalone for testing syntax
 try:
     SpatialMap2
 except NameError:
     print("Warning: SpatialMap2 not defined. Using a placeholder for syntax checking.")
+
     class SpatialMap2:
-        def __init__(self, fig, region, cbar_mode, colorbar, cbar_location, nrows_ncols):
+        def __init__(
+            self, fig, region, cbar_mode, colorbar, cbar_location, nrows_ncols
+        ):
             self.fig = fig
             self.region = region
             self.cbar_mode = cbar_mode
@@ -3171,28 +3226,45 @@ except NameError:
             self.cbar_location = cbar_location
             self.nrows, self.ncols = nrows_ncols
             # Create dummy axes based on nrows_ncols
-            self.axes = fig.subplots(nrows=self.nrows, ncols=self.ncols, subplot_kw={'projection': None}) # Placeholder projection
+            self.axes = fig.subplots(
+                nrows=self.nrows, ncols=self.ncols, subplot_kw={"projection": None}
+            )  # Placeholder projection
             if self.nrows * self.ncols == 1:
-                 self.axes = [self.axes] # Make it iterable
+                self.axes = [self.axes]  # Make it iterable
             else:
-                 self.axes = self.axes.flatten() # Flatten for easy indexing
+                self.axes = self.axes.flatten()  # Flatten for easy indexing
 
         def add_plot(self, lon, lat, data, vrange, cmap, ax):
             # Simple placeholder plot
             ax_obj = self.axes[ax]
-            cont = ax_obj.contourf(lon, lat, data, levels=10, cmap=cmap, vmin=vrange[0], vmax=vrange[1], extend='both')
-            return cont # Return something that can be used for colorbar
+            cont = ax_obj.contourf(
+                lon,
+                lat,
+                data,
+                levels=10,
+                cmap=cmap,
+                vmin=vrange[0],
+                vmax=vrange[1],
+                extend="both",
+            )
+            return cont  # Return something that can be used for colorbar
 
         def set_title(self, title, ax, fontsize):
             self.axes[ax].set_title(title, fontsize=fontsize)
 
         def add_colorbar(self, mappable, ax):
-             # Simple placeholder colorbar
-             cbar = self.fig.colorbar(mappable, ax=self.axes[ax], orientation='horizontal', pad=0.2, shrink=0.8)
-             return cbar
+            # Simple placeholder colorbar
+            cbar = self.fig.colorbar(
+                mappable,
+                ax=self.axes[ax],
+                orientation="horizontal",
+                pad=0.2,
+                shrink=0.8,
+            )
+            return cbar
 
         def set_cbar_xlabel(self, cbar, label, fontsize):
-             cbar.set_label(label, fontsize=fontsize)
+            cbar.set_label(label, fontsize=fontsize)
 
         def add_coastlines(self, ax):
             # Placeholder
@@ -3206,11 +3278,11 @@ except NameError:
             pass
 
 
-def plot_seasonal_difference_panel_1x4( # Renamed function
+def plot_seasonal_difference_panel_1x4(  # Renamed function
     mask_name_1,
     mask_name_2,
     selected_mems_dict,
-    ensemble_dir, # This variable wasn't used in the original snippet, but kept for signature consistency
+    ensemble_dir,  # This variable wasn't used in the original snippet, but kept for signature consistency
     output_dir,
     init_date,
     fin_date,
@@ -3235,22 +3307,26 @@ def plot_seasonal_difference_panel_1x4( # Renamed function
     recon_path_2 = f"{output_dir}/reconstructions/{mask_name_2}/{first_ens}/{first_mem}/recon_pCO2_{first_ens}_{first_mem}_mon_1x1_{init_date}_{fin_date}.zarr"
 
     try:
-        recon1_full_members = xr.open_zarr(recon_path_1, consolidated=True)["pCO2_recon_full"]
-        recon2_full_members = xr.open_zarr(recon_path_2, consolidated=True)["pCO2_recon_full"]
+        recon1_full_members = xr.open_zarr(recon_path_1, consolidated=True)[
+            "pCO2_recon_full"
+        ]
+        recon2_full_members = xr.open_zarr(recon_path_2, consolidated=True)[
+            "pCO2_recon_full"
+        ]
     except Exception as e:
         # print(f"ERROR loading Zarr data: {e}") # Suppressed
-        return # Exit if loading fails
+        return  # Exit if loading fails
 
     # --- Handle Member Dimension ---
-    member_dim_name = 'member'
+    member_dim_name = "member"
     # Process recon1
     if member_dim_name in recon1_full_members.dims:
         if recon1_full_members.sizes[member_dim_name] > 1:
             recon1_full = recon1_full_members.isel({member_dim_name: 0})
         elif recon1_full_members.sizes[member_dim_name] == 1:
             recon1_full = recon1_full_members.squeeze(dim=member_dim_name, drop=True)
-        else: # Should not happen if dim exists, but handle defensively
-             recon1_full = recon1_full_members
+        else:  # Should not happen if dim exists, but handle defensively
+            recon1_full = recon1_full_members
     else:
         recon1_full = recon1_full_members
     # Process recon2
@@ -3258,7 +3334,7 @@ def plot_seasonal_difference_panel_1x4( # Renamed function
         if recon2_full_members.sizes[member_dim_name] > 1:
             recon2_full = recon2_full_members.isel({member_dim_name: 0})
         elif recon2_full_members.sizes[member_dim_name] == 1:
-             recon2_full = recon2_full_members.squeeze(dim=member_dim_name, drop=True)
+            recon2_full = recon2_full_members.squeeze(dim=member_dim_name, drop=True)
         else:
             recon2_full = recon2_full_members
     else:
@@ -3266,63 +3342,86 @@ def plot_seasonal_difference_panel_1x4( # Renamed function
 
     # --- Calculate Seasonal Means ---
     # Use standard abbreviations for grouping and selection with xarray
-    seasons_order = ['DJF', 'MAM', 'JJA', 'SON']
+    seasons_order = ["DJF", "MAM", "JJA", "SON"]
     # Use full names for display labels
     # **** CHANGED HERE ****
-    season_display_labels = ['Winter', 'Spring', 'Summer', 'Autumn']
+    season_display_labels = ["Winter", "Spring", "Summer", "Autumn"]
 
     # Make sure the 'time' coordinate is datetime-like for '.season' accessor
     try:
         # Ensure time coordinate is datetime type
-        if not xr.core.common.is_np_datetime_like(recon1_full['time'].dtype):
-             recon1_full['time'] = recon1_full['time'].astype('datetime64[ns]')
-        if not xr.core.common.is_np_datetime_like(recon2_full['time'].dtype):
-             recon2_full['time'] = recon2_full['time'].astype('datetime64[ns]')
+        if not xr.core.common.is_np_datetime_like(recon1_full["time"].dtype):
+            recon1_full["time"] = recon1_full["time"].astype("datetime64[ns]")
+        if not xr.core.common.is_np_datetime_like(recon2_full["time"].dtype):
+            recon2_full["time"] = recon2_full["time"].astype("datetime64[ns]")
 
-        recon1_seasonal = recon1_full.groupby('time.season').mean(dim="time").sel(season=seasons_order)
-        recon2_seasonal = recon2_full.groupby('time.season').mean(dim="time").sel(season=seasons_order)
+        recon1_seasonal = (
+            recon1_full.groupby("time.season")
+            .mean(dim="time")
+            .sel(season=seasons_order)
+        )
+        recon2_seasonal = (
+            recon2_full.groupby("time.season")
+            .mean(dim="time")
+            .sel(season=seasons_order)
+        )
         diff_seasonal = recon2_seasonal - recon1_seasonal
     except Exception as e:
         # print(f"ERROR during seasonal calculation: {e}") # Suppressed
-        return # Exit if calculation fails
+        return  # Exit if calculation fails
 
     # --- Align Longitude ---
-    lon_coord_name = 'xlon' if 'xlon' in diff_seasonal.coords else 'lon' if 'lon' in diff_seasonal.coords else None
+    lon_coord_name = (
+        "xlon"
+        if "xlon" in diff_seasonal.coords
+        else "lon"
+        if "lon" in diff_seasonal.coords
+        else None
+    )
 
-    if lon_coord_name and lon_coord_name in diff_seasonal.dims: # Check if it's also a dimension
-         # Check if already centered around 0
-         min_lon = diff_seasonal[lon_coord_name].min().item() # Use .item() to get scalar value
-         max_lon = diff_seasonal[lon_coord_name].max().item()
-         if min_lon < -170 and max_lon > 170 :
-              pass # Already seems adjusted
-         elif max_lon > 180: # Assumes 0 to 360 range
-             try:
-                 # Use .sizes to get dimension length
-                 lon_size = diff_seasonal.sizes[lon_coord_name]
-                 # Ensure roll amount is integer
-                 roll_amount = lon_size // 2
-                 diff_seasonal = diff_seasonal.roll({lon_coord_name: roll_amount}, roll_coords=True)
-                 # Adjust coordinate values
-                 diff_seasonal[lon_coord_name] = (diff_seasonal[lon_coord_name] + 180) % 360 - 180
-             except Exception as e:
-                  # print(f"Warning: Error during longitude roll/adjustment: {e}") # Suppressed
-                  pass # Continue if rolling fails
-         else:
-              pass # Assume it's okay or handle other cases if necessary
+    if (
+        lon_coord_name and lon_coord_name in diff_seasonal.dims
+    ):  # Check if it's also a dimension
+        # Check if already centered around 0
+        min_lon = (
+            diff_seasonal[lon_coord_name].min().item()
+        )  # Use .item() to get scalar value
+        max_lon = diff_seasonal[lon_coord_name].max().item()
+        if min_lon < -170 and max_lon > 170:
+            pass  # Already seems adjusted
+        elif max_lon > 180:  # Assumes 0 to 360 range
+            try:
+                # Use .sizes to get dimension length
+                lon_size = diff_seasonal.sizes[lon_coord_name]
+                # Ensure roll amount is integer
+                roll_amount = lon_size // 2
+                diff_seasonal = diff_seasonal.roll(
+                    {lon_coord_name: roll_amount}, roll_coords=True
+                )
+                # Adjust coordinate values
+                diff_seasonal[lon_coord_name] = (
+                    diff_seasonal[lon_coord_name] + 180
+                ) % 360 - 180
+            except Exception as e:
+                # print(f"Warning: Error during longitude roll/adjustment: {e}") # Suppressed
+                pass  # Continue if rolling fails
+        else:
+            pass  # Assume it's okay or handle other cases if necessary
     else:
-         # print("Warning: Longitude dimension ('xlon' or 'lon') not found. Skipping longitude alignment.") # Suppressed
-         pass # Continue without alignment if coord/dim not found
-
+        # print("Warning: Longitude dimension ('xlon' or 'lon') not found. Skipping longitude alignment.") # Suppressed
+        pass  # Continue without alignment if coord/dim not found
 
     # --- Plotting ---
     with plt.style.context(plot_style):
         # Create a figure with 1 row and 4 columns - make it wide
-        fig = plt.figure(figsize=(22, 6), dpi=200) # Adjusted figsize for 1x4
+        fig = plt.figure(figsize=(22, 6), dpi=200)  # Adjusted figsize for 1x4
 
         try:
             # Check if SpatialMap2 exists before trying to use it
-            if 'SpatialMap2' not in globals():
-                 raise NameError("SpatialMap2 class is not defined. Please define or import it.")
+            if "SpatialMap2" not in globals():
+                raise NameError(
+                    "SpatialMap2 class is not defined. Please define or import it."
+                )
 
             # Initialize your map class with 1x4 layout
             worldmap = SpatialMap2(
@@ -3331,62 +3430,74 @@ def plot_seasonal_difference_panel_1x4( # Renamed function
                 cbar_mode="each",
                 colorbar=True,
                 cbar_location="bottom",
-                nrows_ncols=[1, 4] # **** KEPT AS 1x4 ****
+                nrows_ncols=[1, 4],  # **** KEPT AS 1x4 ****
             )
         except NameError as e:
-             # print(f"Error: {e}") # Suppressed
-             plt.close(fig)
-             return
+            # print(f"Error: {e}") # Suppressed
+            plt.close(fig)
+            return
         except Exception as e:
-             # print(f"Error initializing SpatialMap2: {e}") # Suppressed
-             plt.close(fig)
-             return
+            # print(f"Error initializing SpatialMap2: {e}") # Suppressed
+            plt.close(fig)
+            return
 
         # Check for latitude coordinate name (use .coords now)
-        lat_coord_name = 'ylat' if 'ylat' in diff_seasonal.coords else 'lat' if 'lat' in diff_seasonal.coords else None
-        if not lat_coord_name or lat_coord_name not in diff_seasonal.dims: # Also check if it's a dimension
+        lat_coord_name = (
+            "ylat"
+            if "ylat" in diff_seasonal.coords
+            else "lat"
+            if "lat" in diff_seasonal.coords
+            else None
+        )
+        if (
+            not lat_coord_name or lat_coord_name not in diff_seasonal.dims
+        ):  # Also check if it's a dimension
             # print("Error: Latitude dimension ('ylat' or 'lat') not found. Cannot plot.") # Suppressed
             plt.close(fig)
             return
         # Re-check lon coord name after alignment attempt
         if not lon_coord_name or lon_coord_name not in diff_seasonal.dims:
-             # print("Error: Longitude dimension ('xlon' or 'lon') not found. Cannot plot.") # Suppressed
-             plt.close(fig)
-             return
-
+            # print("Error: Longitude dimension ('xlon' or 'lon') not found. Cannot plot.") # Suppressed
+            plt.close(fig)
+            return
 
         # Loop through each season and plot the difference
         # The axis index 'i' (0, 1, 2, 3) directly corresponds to the
         # flattened index of the 1x4 grid.
-        for i, season_code in enumerate(seasons_order): # Iterate using internal codes ('DJF', etc.)
+        for i, season_code in enumerate(
+            seasons_order
+        ):  # Iterate using internal codes ('DJF', etc.)
             # **** CHANGED HERE ****
             # Get the corresponding display label ('Winter', etc.)
             season_label = season_display_labels[i]
-            ax_idx_diff  = i # Direct mapping: 0->leftmost, ..., 3->rightmost
+            ax_idx_diff = i  # Direct mapping: 0->leftmost, ..., 3->rightmost
 
             diff_s = diff_seasonal.sel(season=season_code)
 
             # Plot the difference map for the current season
             try:
                 sub_diff = worldmap.add_plot(
-                    lon=diff_s[lon_coord_name], # Use identified lon coord
-                    lat=diff_s[lat_coord_name], # Use identified lat coord
+                    lon=diff_s[lon_coord_name],  # Use identified lon coord
+                    lat=diff_s[lat_coord_name],  # Use identified lat coord
                     data=diff_s,
                     vrange=diff_vrange,
-                    cmap=cmap_diff_obj, # Pass the actual colormap object
+                    cmap=cmap_diff_obj,  # Pass the actual colormap object
                     ax=ax_idx_diff,
                 )
                 worldmap.set_title(
                     # **** CHANGED HERE **** Use the full season name label
                     f"Mean Recon Diff ({season_label})\n({mask_name_2} - {mask_name_1})",
-                    ax=ax_idx_diff, fontsize=11, # Adjust font size if needed
+                    ax=ax_idx_diff,
+                    fontsize=11,  # Adjust font size if needed
                 )
                 cbar_diff = worldmap.add_colorbar(sub_diff, ax=ax_idx_diff)
                 # **** CHANGED HERE **** Use the full season name label
-                worldmap.set_cbar_xlabel(cbar_diff, f"Mean Δ pCO₂ ({season_label}) (µatm)", fontsize=9)
+                worldmap.set_cbar_xlabel(
+                    cbar_diff, f"Mean Δ pCO₂ ({season_label}) (µatm)", fontsize=9
+                )
 
                 # Optional: Add coastlines/land if SpatialMap2 supports it
-                try: # Wrap optional features in try-except
+                try:  # Wrap optional features in try-except
                     worldmap.add_coastlines(ax=ax_idx_diff)
                     worldmap.add_land(ax=ax_idx_diff)
                 except AttributeError:
@@ -3396,27 +3507,312 @@ def plot_seasonal_difference_panel_1x4( # Renamed function
                     # print(f"Warning: Error adding coastlines/land on axis {ax_idx_diff}: {e_feature}") # Suppressed
                     pass
 
-
             except Exception as e:
-                 # print(f"Error plotting Difference for {season_label} on axis {ax_idx_diff}: {e}") # Suppressed
-                 # Attempt to set an error title even if plotting fails
-                 try:
-                    worldmap.set_title(f"Mean Recon Diff ({season_label})\nPLOT ERROR", ax=ax_idx_diff, fontsize=11)
-                 except:
+                # print(f"Error plotting Difference for {season_label} on axis {ax_idx_diff}: {e}") # Suppressed
+                # Attempt to set an error title even if plotting fails
+                try:
+                    worldmap.set_title(
+                        f"Mean Recon Diff ({season_label})\nPLOT ERROR",
+                        ax=ax_idx_diff,
+                        fontsize=11,
+                    )
+                except:
                     # print(f"  Could not set error title for axis {ax_idx_diff}.") # Suppressed
                     pass
-
 
         # Adjust layout for 1x4 grid
         # Use subplots_adjust, focusing on wspace and bottom/top margins
         plt.subplots_adjust(
-            left=0.04,    # Small left margin
-            right=0.98,   # Small right margin
+            left=0.04,  # Small left margin
+            right=0.98,  # Small right margin
             bottom=0.22,  # Need enough space for colorbars + labels
-            top=0.85,     # Need space for titles
+            top=0.85,  # Need space for titles
             wspace=0.15,  # Space between the plots (adjust as needed)
-            hspace=0      # Not applicable for single row
+            hspace=0,  # Not applicable for single row
         )
 
-
         plt.show()
+
+
+####
+
+
+def show_baseline_pvalue_plot(
+    selected_mems_dict,
+    output_dir,
+    init_date,
+    fin_date,
+    pval_vrange=[0, 0.1],
+    plot_style="seaborn-v0_8-talk",
+):
+    """Show p-value map for just the first member's baseline data"""
+
+    # Create custom p-value colormap (white to red, increasing significance)
+    white_to_red = LinearSegmentedColormap.from_list(
+        "white_to_red",
+        [(1, 1, 1), (1, 0.8, 0.8), (1, 0.5, 0.5), (1, 0, 0), (0.7, 0, 0)],
+        N=256,
+    )
+
+    try:
+        # Get first ensemble and member
+        first_ens = list(selected_mems_dict.keys())[0]
+        first_mem = selected_mems_dict[first_ens][0]
+
+        # Build path to baseline data
+        mask_name = "baseline"
+        base_path = f"{output_dir}/reconstructions/{mask_name}/{first_ens}/{first_mem}/recon_pCO2_{first_ens}_{first_mem}_mon_1x1_{init_date}_{fin_date}.zarr"
+
+        # Load data
+        recon_full = xr.open_zarr(base_path, consolidated=True)
+
+        # Get truth and reconstruction data
+        if (
+            "pCO2_truth" in recon_full.data_vars
+            and "pCO2_recon_full" in recon_full.data_vars
+        ):
+            truth_data = recon_full["pCO2_truth"]
+            baseline_recon = recon_full["pCO2_recon_full"]
+        else:
+            # Alternative approach if variables not found
+            truth_data = recon_full["pCO2_recon_unseen"]
+            baseline_recon = recon_full["pCO2_recon_full"]
+
+        # Calculate p-value using method from the reference code
+        n = len(baseline_recon["time"])
+        diff = (baseline_recon - truth_data).mean(dim="time")
+        diff_std = (baseline_recon - truth_data).std(dim="time")
+        diff_std = xr.where(diff_std == 0, np.nan, diff_std)
+        t_stat = diff / (diff_std / np.sqrt(n))
+
+        # Calculate p-values
+        p_values = xr.apply_ufunc(
+            lambda x: 2 * stats.t.sf(np.abs(x), df=n - 1),
+            t_stat,
+            dask="parallelized",
+            output_dtypes=[float],
+        )
+
+        # Apply Pacific centering (similar to pacific_center function)
+        p_values_centered = xr_add_cyclic_point(p_values, cyclic_coord="xlon")
+        p_values_centered = p_values_centered.assign_coords(
+            xlon=(((p_values_centered.xlon + 180) % 360) - 180)
+        )
+        p_values_centered = p_values_centered.assign_coords(
+            xlon=(p_values_centered.xlon + 180) % 360
+        )
+        p_values_centered = p_values_centered.sortby("xlon")
+
+        # Calculate statistics
+        sig_threshold = 0.05
+        ocean_mask = ~np.isnan(p_values_centered.values)
+        total_ocean_cells = np.sum(ocean_mask)
+        sig_cells = np.sum((p_values_centered.values <= sig_threshold) & ocean_mask)
+        sig_percentage = (
+            (sig_cells / total_ocean_cells) * 100 if total_ocean_cells > 0 else 0
+        )
+
+        # Print statistics
+        print(f"Number of valid (non-NaN) p-values: {total_ocean_cells}")
+        print(
+            f"Significant areas (p < {sig_threshold}): {sig_cells} pixels ({sig_percentage:.1f}%)"
+        )
+
+        # Plot the p-value map
+        with plt.style.context(plot_style):
+            fig = plt.figure(figsize=(10, 6), dpi=200)
+
+            # Use SpatialMap2 for consistent plotting style
+            worldmap = SpatialMap2(
+                fig=fig,
+                region="world",
+                cbar_mode="single",
+                colorbar=True,
+                cbar_location="bottom",
+                nrows_ncols=[1, 1],
+            )
+
+            # Plot p-value map
+            sub = worldmap.add_plot(
+                lon=p_values_centered["xlon"],
+                lat=p_values_centered["ylat"],
+                data=p_values_centered,
+                vrange=pval_vrange,
+                cmap=white_to_red,
+                ax=0,
+                linewidth_coast=0.5,
+            )
+
+            # Add title and colorbar labels
+            worldmap.set_title(
+                f"p-value Map (white→red: low→high significance)\n(baseline reconstruction vs truth)",
+                ax=0,
+                fontsize=14,
+            )
+
+            col = worldmap.add_colorbar(sub, ax=0, extend="max")
+            worldmap.set_cbar_xlabel(
+                col, "p-value (< 0.05 indicates significance)", fontsize=12
+            )
+            worldmap.set_ticks(col, 0, 0.1, 0.02)
+
+            plt.tight_layout()
+            plt.show()
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        import traceback
+
+        traceback.print_exc()
+
+
+######
+fs = gcsfs.GCSFileSystem()
+
+
+# Function to recenter the map to the Pacific
+def pacific_center(ds):
+    ds_cyclic = xr_add_cyclic_point(ds, cyclic_coord="xlon")
+    ds_cyclic = ds_cyclic.assign_coords(xlon=(((ds_cyclic.xlon + 180) % 360) - 180))
+    ds_pacific = ds_cyclic.assign_coords(xlon=(ds_cyclic.xlon + 180) % 360)
+    ds_pacific = ds_pacific.sortby("xlon")
+    return ds_pacific
+
+
+# Load reconstruction data
+def load_reconstruction(mask_type, member, base_dir, ens, init_date, fin_date):
+    recon_dir = f"{base_dir}/reconstructions/{mask_type}/{ens}/{member}"
+    possible_filenames = [
+        f"recon_pCO2_{ens}_{member}_mon_1x1_{init_date}_{fin_date}.zarr",
+        f"recon_pCO2residual_{ens}_{member}_mon_1x1_{init_date}_{fin_date}.zarr",
+    ]
+    for filename in possible_filenames:
+        try:
+            recon_path = f"{recon_dir}/{filename}"
+            full_path = f"{recon_path}"
+            if not fs.exists(full_path):
+                continue
+            ds = xr.open_zarr(full_path)
+            if mask_type == "baseline":
+                if "pCO2_truth" in ds.data_vars and "pCO2_recon_full" in ds.data_vars:
+                    return ds["pCO2_truth"], ds["pCO2_recon_full"]
+            known_pco2_vars = ["pCO2_recon_full", "pCO2_recon_unseen"]
+            for var in known_pco2_vars:
+                if var in ds.data_vars:
+                    return var, ds[var]
+            return None, ds
+        except Exception as e:
+            print(f"Error loading {full_path}: {e}")
+    return None, None
+
+
+# Calculate p-values between two datasets
+def calculate_p_value(data1, data2, dim="time"):
+    if isinstance(data1, xr.Dataset):
+        for var in data1.data_vars:
+            if "pco2" in var.lower() or "recon" in var.lower():
+                data1 = data1[var]
+                break
+        else:
+            data1 = data1[list(data1.data_vars)[0]]
+    if isinstance(data2, xr.Dataset):
+        for var in data2.data_vars:
+            if "pco2" in var.lower() or "truth" in var.lower():
+                data2 = data2[var]
+                break
+        else:
+            data2 = data2[list(data2.data_vars)[0]]
+    n = len(data1[dim])
+    diff = (data1 - data2).mean(dim=dim)
+    diff_std = (data1 - data2).std(dim=dim)
+    diff_std = xr.where(diff_std == 0, np.nan, diff_std)
+    t_stat = diff / (diff_std / np.sqrt(n))
+    p_values = xr.apply_ufunc(
+        lambda x: 2 * stats.t.sf(np.abs(x), df=n - 1),
+        t_stat,
+        dask="parallelized",
+        output_dtypes=[float],
+    )
+    return p_values
+
+
+# Create side-by-side p-value plots for each member
+def create_side_by_side_pvalue_plot(
+    all_member_data, output_filename_prefix="pvalues_per_member"
+):
+    plot_style = "seaborn-v0_8-talk"
+    white_to_red = LinearSegmentedColormap.from_list(
+        "white_to_red",
+        [(1, 1, 1), (1, 0.8, 0.8), (1, 0.5, 0.5), (1, 0, 0), (0.7, 0, 0)],
+        N=256,
+    )
+    with plt.style.context(plot_style):
+        for member, member_data in all_member_data.items():
+            fig = plt.figure(figsize=(18, 5))
+            worldmap = SpatialMap2(
+                fig=fig,
+                region="world",
+                cbar_mode="single",
+                colorbar=True,
+                cbar_location="bottom",
+                nrows_ncols=[1, 3],
+            )
+            for i, mask_type in enumerate(["baseline", "densify_50p", "expand_50p"]):
+                if mask_type not in member_data:
+                    continue
+                data = member_data[mask_type]
+                sub = worldmap.add_plot(
+                    lon=data["xlon"],
+                    lat=data["ylat"],
+                    data=data,
+                    vrange=[0, 0.2],
+                    cmap=white_to_red,
+                    ax=i,
+                    linewidth_coast=0.5,
+                )
+                worldmap.set_title(f"{mask_type}", ax=i, fontsize=14)
+            col = worldmap.add_colorbar(sub, ax=0, extend="max")
+            worldmap.set_cbar_xlabel(
+                col, "P-value (white→red: high→low significance)", fontsize=14
+            )
+            worldmap.set_ticks(col, 0, 0.2, 0.04)
+            member_id = member.split("_")[-1]
+            plt.suptitle(f"P-values per Mask - {member_id}", fontsize=18, y=0.98)
+            plt.subplots_adjust(top=0.88, bottom=0.18, hspace=0.2)
+            # plt.savefig(f"{output_filename_prefix}_{member_id}.png", dpi=300, bbox_inches='tight')
+            plt.show()
+
+
+# Calculate and print statistics table
+def calculate_grid_stats(all_member_data):
+    sig_threshold = 0.05
+    stats_list = []
+    for member, member_data in all_member_data.items():
+        for mask_type, p_values in member_data.items():
+            ocean_mask = ~np.isnan(p_values)
+            mean_pval = float(p_values.where(ocean_mask).mean().values)
+            total_ocean_cells = np.sum(ocean_mask)
+            sig_cells = np.sum((p_values.values <= sig_threshold) & ocean_mask.values)
+            sig_percentage = (sig_cells / total_ocean_cells) * 100
+            member_id = member.split("_")[-1]
+            stats_list.append(
+                {
+                    "Member": member_id,
+                    "Mask Type": mask_type,
+                    "Significant Area %": sig_percentage,
+                    "Mean P-value": mean_pval,
+                }
+            )
+    stats_df = pd.DataFrame(stats_list)
+    print("\nStatistical Summary:")
+    print("=" * 70)
+    print(
+        f"{'Member':<10} {'Mask Type':<15} {'Significant Area %':<20} {'Mean P-value':<15}"
+    )
+    print("-" * 70)
+    for _, row in stats_df.iterrows():
+        print(
+            f"{row['Member']:<10} {row['Mask Type']:<15} {row['Significant Area %']:20.2f}% {row['Mean P-value']:15.4f}"
+        )
+    print("=" * 70)
+    return stats_df
