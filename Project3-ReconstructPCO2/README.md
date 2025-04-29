@@ -43,8 +43,8 @@ Project3/
 ## **Team & Contribution**
 
 Group 1:
-- Sarah Pariser:  
-- Azam Khan: 
+- Sarah Pariser:  Created masks; streamlined code/story; contributed to written introduction & conclusion
+- Azam Khan: Setup pipeline to train ngboost models; wrote visualization functions & analysis
 - Bokai He: 
 - Victor Wang: 
 
