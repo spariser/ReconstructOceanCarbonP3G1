@@ -3167,7 +3167,7 @@ def plot_reconstruction_comparison_panel_full(
                 ax=2,
             )
             worldmap.set_title(
-                f"p-value Map (white→red: low→high significance)\n({mask_name_2} vs {mask_name_1})",
+                f"p-value Map (white→red: high→low significance)\n({mask_name_2} vs {mask_name_1})",
                 ax=2,
                 fontsize=13,
             )
@@ -3645,7 +3645,7 @@ def show_baseline_pvalue_plot(
 
             # Add title and colorbar labels
             worldmap.set_title(
-                f"p-value Map (white→red: low→high significance)\n(baseline reconstruction vs truth)",
+                f"p-value Map (white→red: high→low significance)\n(baseline reconstruction vs truth)",
                 ax=0,
                 fontsize=14,
             )
