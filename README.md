@@ -107,9 +107,10 @@ We compare the **baseline SOCAT sampling mask** to six enhanced sampling strateg
     ```bash
     cd ReconstructOceanCarbonP3G1
     ```
-3. Run the cells in the `Project3_data_story.ipynb` notebook to reproduce the analysis.
+3. Run the cells in the `Oceanmixing_Group1.ipynb` notebook to reproduce the analysis.
 4. Enter your username in the `username` variable in the first cell of the notebook.
-5. Ensure `runthiscell` is set to **-1** as a reviewer to reduce time.
+5. Restart kernel if you get the error lib.config not found.
+7. Ensure `runthiscell` is set to **-1** as a reviewer to reduce time.
 
 
 
